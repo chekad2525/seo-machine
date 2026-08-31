@@ -24,7 +24,7 @@ npm run dev
 
 Open `http://localhost:3000`. The API health check is at `http://localhost:3001/api/v1/health`.
 
-For local phone OTP tests, set `SMS_DEV_MODE=true`; the NestJS API response includes a `devCode`. In production, replace that branch with the Kavenegar VerifyLookup adapter without changing the Auth.js provider contract.
+For local phone OTP tests, set `SMS_DEV_MODE=true`; the NestJS API response includes a `devCode`. In production, set `SMS_DEV_MODE=false`, `KAVENEGAR_API_KEY`, and `KAVENEGAR_VERIFY_TEMPLATE` to use the Kavenegar VerifyLookup adapter. Requests are rate-limited to one code per minute and failed delivery invalidates the stored OTP.
 
 ## API surface
 
