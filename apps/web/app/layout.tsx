@@ -1,19 +1,8 @@
-import type { Metadata } from "next";
-import "./globals.css";
+import './globals.css';
+import type { Metadata } from 'next';
 
-export const metadata: Metadata = {
-  title: "SEO Machine",
-  description: "Evidence-first SEO operating system",
-};
+export const metadata: Metadata = { title: 'SEO Machine', description: 'A calmer operating system for search growth.' };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  return (
-    <html lang="fa" dir="rtl">
-      <body>{children}</body>
-    </html>
-  );
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return <html lang="en"><body>{children}</body></html>;
 }

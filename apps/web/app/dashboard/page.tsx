@@ -1,68 +1,8 @@
-import { auth, signOut } from "@/auth";
-import { redirect } from "next/navigation";
+import { auth } from '../../auth';
+import Link from 'next/link';
 
 export default async function DashboardPage() {
   const session = await auth();
-
-  if (!session?.user) redirect("/sign-in");
-
-  const displayName =
-    session.user.name ||
-    session.user.email ||
-    session.user.phone ||
-    "کاربر";
-
-  return (
-    <main className="dashboard">
-      <header className="dashboard-header">
-        <div className="shell topbar" style={{ height: "auto" }}>
-          <div className="brand">
-            <div className="brand-mark">S</div>
-            <span>SEO Machine</span>
-          </div>
-
-          <form
-            action={async () => {
-              "use server";
-              await signOut({ redirectTo: "/" });
-            }}
-          >
-            <button className="btn btn-secondary" type="submit">
-              خروج
-            </button>
-          </form>
-        </div>
-      </header>
-
-      <div className="shell">
-        <div style={{ paddingTop: 48 }}>
-          <div className="eyebrow">MISSION CONTROL</div>
-          <h1 style={{ fontSize: "clamp(38px, 6vw, 68px)" }}>
-            خوش آمدی، {displayName}
-          </h1>
-          <p className="lead">
-            ورود امن فعال است. مرحله بعد ایجاد Project و اتصال Google Search
-            Console خواهد بود.
-          </p>
-        </div>
-
-        <section className="dashboard-grid">
-          <div className="metric">
-            <div className="metric-label">Auth Provider</div>
-            <div className="metric-value positive">
-              {session.provider || "Session"}
-            </div>
-          </div>
-          <div className="metric">
-            <div className="metric-label">Projects</div>
-            <div className="metric-value">0</div>
-          </div>
-          <div className="metric">
-            <div className="metric-label">Next Mission</div>
-            <div className="metric-value">Create project</div>
-          </div>
-        </section>
-      </div>
-    </main>
-  );
+  if (!session?.user) return <main className="auth-shell"><div className="auth-card"><p className="eyebrow">Private workspace</p><h1>Sign in to see your signals.</h1><Link className="primary-button full" href="/sign-in">Sign in <span>→</span></Link></div></main>;
+  return <main className="dashboard-shell"><nav className="dashboard-nav"><div className="brand"><span className="brand-mark">⌁</span> SEO Machine</div><span className="setup-user">{session.user.email ?? session.user.name}</span></nav><section className="dashboard-content"><div className="dashboard-header"><div><p className="eyebrow">Workspace / Overview</p><h1>Your search system is ready.</h1><p className="muted">Next, connect the signal and let the useful questions surface.</p></div><span className="live-pill">● workspace live</span></div><div className="dashboard-grid"><article className="metric-card accent"><span>PROJECTS</span><strong>01</strong><p>One site, ready to learn from.</p></article><article className="metric-card"><span>GSC STATUS</span><strong>Pending</strong><p>Connect from project settings.</p></article><article className="next-card"><p className="eyebrow">Next useful move</p><h2>Bring in the query layer.</h2><p className="muted">Search Console gives your team a shared view of clicks, impressions, and the pages earning attention.</p><button className="secondary-button" type="button">Connect Search Console <span>→</span></button></article></div></section></main>;
 }

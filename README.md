@@ -1,93 +1,47 @@
-# SEO Machine v0.3.1
+# SEO Machine v0.4.0
 
-The first real user-facing authentication website.
+SEO Machine is a NestJS + Next.js + PostgreSQL + Prisma monorepo for turning search data into a focused operating rhythm.
 
-## Stack
+## What v0.4.0 adds
 
-- Next.js
-- Auth.js (self-hosted)
-- Google OAuth
-- Phone OTP
-- Kavenegar SMS adapter
-- NestJS API
-- PostgreSQL + Prisma
-- Docker Compose
+- Canonical SEO Machine users shared by Google OAuth and verified phone OTP.
+- Hardened identity linking: Google provider account IDs are authoritative; email is a secondary link only when Google vouches for it.
+- Atomic onboarding that creates an Organization, owner Membership, Workspace, Project, and optional pending Search Console connection in one transaction.
+- Tenant-scoped organization, workspace, project, and Search Console preparation APIs.
+- Auth.js Google provider and phone OTP credential entry point.
+- Read-only Google Search Console scope preparation: `webmasters.readonly`.
+- Postgres migration, Docker Compose, tests, and GitHub Actions CI.
 
-## Why this auth architecture?
-
-Auth.js is free/open source and runs on SEO Machine infrastructure. Phone OTP
-uses an adapter, so Kavenegar can later be replaced without rewriting auth.
-
-## Local development
-
-Copy:
+## Run locally
 
 ```bash
 cp .env.example .env
+npm install
+npm run db:generate
+npm run db:migrate
+npm run dev
 ```
 
-Generate two strong random values for:
+Open `http://localhost:3000`. The API health check is at `http://localhost:3001/api/v1/health`.
 
-```env
-AUTH_SECRET=
-OTP_HASH_SECRET=
-```
+For local phone OTP tests, set `SMS_DEV_MODE=true`; the NestJS API response includes a `devCode`. In production, replace that branch with the Kavenegar VerifyLookup adapter without changing the Auth.js provider contract.
 
-For local phone-login testing, keep:
+## API surface
 
-```env
-SMS_DEV_MODE=true
-```
+All authenticated API routes expect the internal `x-user-id` boundary header. Only the server-side Next.js proxy should set it in production.
 
-The OTP will be printed in the NestJS API logs and no SMS credit is consumed.
+| Method | Route | Purpose |
+| --- | --- | --- |
+| POST | `/api/v1/identity/google/sync` | Canonical Google identity sync |
+| POST | `/api/v1/identity/phone/request` | Issue a hashed, expiring OTP |
+| POST | `/api/v1/identity/phone/verify` | Consume OTP and upsert verified phone user |
+| GET | `/api/v1/onboarding` | Read setup state |
+| POST | `/api/v1/onboarding/complete` | Atomically create initial tenant graph |
+| GET/POST | `/api/v1/organizations` | List or create organizations |
+| GET/POST | `/api/v1/workspaces` | List or create workspaces |
+| GET/POST | `/api/v1/projects` | List or create projects |
+| GET/POST | `/api/v1/integrations/google-search-console/status\|prepare` | Read or prepare GSC connection |
 
-Run:
+## Google Search Console next step
 
-```bash
-docker compose up --build
-```
-
-Open:
-
-- Landing: http://localhost:3000
-- Sign in: http://localhost:3000/sign-in
-- Dashboard: http://localhost:3000/dashboard
-- API health: http://localhost:3001/api/v1/health
-
-## Google OAuth
-
-Set:
-
-```env
-AUTH_GOOGLE_ID=
-AUTH_GOOGLE_SECRET=
-```
-
-Google OAuth callback:
-
-```text
-http://localhost:3000/api/auth/callback/google
-```
-
-For production replace localhost with your production domain.
-
-## Kavenegar
-
-Set:
-
-```env
-KAVENEGAR_API_KEY=
-KAVENEGAR_VERIFY_TEMPLATE=
-SMS_DEV_MODE=false
-```
-
-The VerifyLookup adapter sends the 6-digit OTP.
-
-## Next milestone
-
-v0.4.0:
-- synchronize Google identities into SEO Machine User;
-- onboarding;
-- Organization/Workspace creation;
-- Project creation;
-- Google Search Console connection.
+v0.4.0 stores the project property and exact read-only scope, but does not yet exchange OAuth tokens. Set `GSC_CLIENT_ID`, `GSC_CLIENT_SECRET`, and `GSC_REDIRECT_URI`, then implement the callback/token exchange against the `PENDING` connection before enabling production connect buttons. Encrypt tokens with a deployment-managed key before persisting them in `accessTokenEnc` and `refreshTokenEnc`.
