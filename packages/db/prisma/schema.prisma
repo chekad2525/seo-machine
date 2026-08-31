@@ -144,8 +144,55 @@ model SearchConsoleConnection {
   updatedAt      DateTime @updatedAt
   project        Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  queryMetrics   SearchConsoleQueryMetric[]
+  pageMetrics    SearchConsolePageMetric[]
+  syncRuns       SearchConsoleSyncRun[]
   @@unique([projectId, property])
   @@index([userId])
+}
+
+model SearchConsoleSyncRun {
+  id           String            @id @default(cuid())
+  connectionId String
+  status       SearchConsoleSyncStatus @default(RUNNING)
+  rangeStart   DateTime          @db.Date
+  rangeEnd     DateTime          @db.Date
+  rowsUpserted Int               @default(0)
+  errorMessage String?           @db.Text
+  startedAt    DateTime          @default(now())
+  completedAt  DateTime?
+  connection   SearchConsoleConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  @@index([connectionId, startedAt])
+}
+
+model SearchConsoleQueryMetric {
+  id           String   @id @default(cuid())
+  connectionId String
+  date         DateTime @db.Date
+  query        String
+  clicks       Int
+  impressions  Int
+  ctr          Float
+  position     Float
+  createdAt    DateTime @default(now())
+  connection   SearchConsoleConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  @@unique([connectionId, date, query])
+  @@index([connectionId, date])
+}
+
+model SearchConsolePageMetric {
+  id           String   @id @default(cuid())
+  connectionId String
+  date         DateTime @db.Date
+  page         String
+  clicks       Int
+  impressions  Int
+  ctr          Float
+  position     Float
+  createdAt    DateTime @default(now())
+  connection   SearchConsoleConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  @@unique([connectionId, date, page])
+  @@index([connectionId, date])
 }
 
 model SearchConsoleOAuthState {
@@ -175,4 +222,10 @@ enum SearchConsoleStatus {
   CONNECTED
   REVOKED
   ERROR
+}
+
+enum SearchConsoleSyncStatus {
+  RUNNING
+  COMPLETED
+  FAILED
 }

@@ -1,4 +1,4 @@
-# SEO Machine v0.4.0
+# SEO Machine v0.4.0 + Search Data Pipeline
 
 SEO Machine is a NestJS + Next.js + PostgreSQL + Prisma monorepo for turning search data into a focused operating rhythm.
 
@@ -10,6 +10,7 @@ SEO Machine is a NestJS + Next.js + PostgreSQL + Prisma monorepo for turning sea
 - Tenant-scoped organization, workspace, project, and Search Console preparation APIs.
 - Auth.js Google provider and phone OTP credential entry point.
 - Read-only Google Search Console scope preparation: `webmasters.readonly`.
+- Search Console query/page ingestion for a bounded, idempotent daily metric window.
 - Postgres migration, Docker Compose, tests, and GitHub Actions CI.
 
 ## Run locally
@@ -41,7 +42,12 @@ All authenticated API routes expect the internal `x-user-id` boundary header. On
 | GET/POST | `/api/v1/workspaces` | List or create workspaces |
 | GET/POST | `/api/v1/projects` | List or create projects |
 | GET/POST | `/api/v1/integrations/google-search-console/status\|prepare` | Read or prepare GSC connection |
+| POST | `/api/v1/integrations/google-search-console/sync` | Fetch and upsert query/page metrics |
+| GET | `/api/v1/integrations/google-search-console/metrics` | Read stored query or page metrics |
+| GET | `/api/v1/integrations/google-search-console/sync/latest` | Read the latest sync run |
 
 ## Google Search Console next step
 
 v0.4.0 prepares and completes the read-only OAuth flow with state + PKCE, verifies the selected property, and encrypts access/refresh tokens with AES-256-GCM before persisting them. Set `GSC_CLIENT_ID`, `GSC_CLIENT_SECRET`, `TOKEN_ENCRYPTION_KEY`, and `GSC_REDIRECT_URI` in production.
+
+The first Search Data Pipeline slice uses the last complete 28-day window by default (ending two days before today, to avoid partial Search Console data). A requested range may be between 1 and 31 days. Sync runs are recorded as `RUNNING`, `COMPLETED`, or `FAILED`, and metric rows use connection/date/query or connection/date/page uniqueness so retries are safe. The API fetches up to 25,000 rows per page and stores query and page dimensions separately.
