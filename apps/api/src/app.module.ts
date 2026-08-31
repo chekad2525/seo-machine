@@ -15,9 +15,11 @@ import { ProjectService } from './project/project.service';
 import { SearchConsoleController } from './search-console/search-console.controller';
 import { SearchConsoleService } from './search-console/search-console.service';
 import { SearchConsoleSyncService } from './search-console/search-console-sync.service';
+import { SearchConsoleTokenService } from './search-console/search-console-token.service';
+import { SearchConsoleSchedulerService } from './search-console/search-console-scheduler.service';
 
 @Module({
   controllers: [HealthController, IdentityController, OnboardingController, OrganizationController, WorkspaceController, ProjectController, SearchConsoleController],
-  providers: [ApiAuthGuard, IdentityService, SmsService, OnboardingService, OrganizationService, WorkspaceService, ProjectService, SearchConsoleService, SearchConsoleSyncService],
+  providers: [ApiAuthGuard, IdentityService, SmsService, OnboardingService, OrganizationService, WorkspaceService, ProjectService, SearchConsoleService, SearchConsoleSyncService, SearchConsoleTokenService, SearchConsoleSchedulerService],
 })
 export class AppModule {}

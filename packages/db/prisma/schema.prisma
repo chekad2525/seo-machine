@@ -140,6 +140,9 @@ model SearchConsoleConnection {
   accessTokenEnc String?  @db.Text
   refreshTokenEnc String? @db.Text
   expiresAt      DateTime?
+  nextSyncAt     DateTime @default(now())
+  syncLeaseId    String?
+  syncLeaseUntil DateTime?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   project        Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -149,6 +152,7 @@ model SearchConsoleConnection {
   syncRuns       SearchConsoleSyncRun[]
   @@unique([projectId, property])
   @@index([userId])
+  @@index([status, nextSyncAt])
 }
 
 model SearchConsoleSyncRun {

@@ -1,4 +1,4 @@
-# SEO Machine v0.4.0 + Search Data Pipeline
+# SEO Machine v0.4.0 + Scheduled Search Data Pipeline
 
 SEO Machine is a NestJS + Next.js + PostgreSQL + Prisma monorepo for turning search data into a focused operating rhythm.
 
@@ -11,6 +11,7 @@ SEO Machine is a NestJS + Next.js + PostgreSQL + Prisma monorepo for turning sea
 - Auth.js Google provider and phone OTP credential entry point.
 - Read-only Google Search Console scope preparation: `webmasters.readonly`.
 - Search Console query/page ingestion for a bounded, idempotent daily metric window.
+- Optional scheduled sync, automatic Google token refresh, and database lease protection.
 - Postgres migration, Docker Compose, tests, and GitHub Actions CI.
 
 ## Run locally
@@ -50,4 +51,6 @@ All authenticated API routes expect the internal `x-user-id` boundary header. On
 
 v0.4.0 prepares and completes the read-only OAuth flow with state + PKCE, verifies the selected property, and encrypts access/refresh tokens with AES-256-GCM before persisting them. Set `GSC_CLIENT_ID`, `GSC_CLIENT_SECRET`, `TOKEN_ENCRYPTION_KEY`, and `GSC_REDIRECT_URI` in production.
 
-The first Search Data Pipeline slice uses the last complete 28-day window by default (ending two days before today, to avoid partial Search Console data). A requested range may be between 1 and 31 days. Sync runs are recorded as `RUNNING`, `COMPLETED`, or `FAILED`, and metric rows use connection/date/query or connection/date/page uniqueness so retries are safe. The API fetches up to 25,000 rows per page and stores query and page dimensions separately.
+The Search Data Pipeline requests a rolling 28-day window ending two days before today with `dataState=final`. This delay is a conservative default, not a guarantee of complete Google coverage. A requested range may be between 1 and 31 days. Sync runs are recorded as `RUNNING`, `COMPLETED`, or `FAILED`. Atomic window replacement keeps retries idempotent and removes stale rows. The API fetches up to 25,000 rows per page and stores query and page dimensions separately.
+
+Set `GSC_SYNC_ENABLED=true` on a long-running API worker to enable scheduled sync. Access tokens refresh automatically; revoked authorization requires reconnection. See [scheduling, testing, and deployment constraints](docs/gsc-scheduling.md) before enabling it. Never expose the inherited trusted-header API directly to the public internet.

@@ -27,7 +27,7 @@ export function decryptToken(value: string) {
 @Injectable()
 export class SearchConsoleService {
   async list(userId: string, projectId: string) {
-    return prisma.searchConsoleConnection.findMany({ where: { projectId, userId }, select: { id: true, projectId: true, property: true, status: true, scopes: true, expiresAt: true, createdAt: true, updatedAt: true } });
+    return prisma.searchConsoleConnection.findMany({ where: { projectId, userId, project: { workspace: { organization: { memberships: { some: { userId } } } } } }, select: { id: true, projectId: true, property: true, status: true, scopes: true, expiresAt: true, nextSyncAt: true, createdAt: true, updatedAt: true } });
   }
 
   async prepare(userId: string, projectId: string, property: string) {
@@ -35,11 +35,12 @@ export class SearchConsoleService {
     const project = await prisma.project.findFirst({ where: { id: projectId, workspace: { organization: { memberships: { some: { userId } } } } } });
     if (!project) throw new NotFoundException('Project not found.');
     if (!cleanProperty) throw new BadRequestException('A Search Console property is required.');
-    const connection = await prisma.searchConsoleConnection.upsert({ where: { projectId_property: { projectId, property: cleanProperty } }, create: { projectId, userId, property: cleanProperty, scopes: [GSC_READONLY_SCOPE], status: 'PENDING' }, update: { userId, scopes: [GSC_READONLY_SCOPE], status: 'PENDING' } });
+    this.required('GSC_CLIENT_ID');
+    const connection = await prisma.searchConsoleConnection.upsert({ where: { projectId_property: { projectId, property: cleanProperty } }, create: { projectId, userId, property: cleanProperty, scopes: [GSC_READONLY_SCOPE], status: 'PENDING' }, update: { userId, scopes: [GSC_READONLY_SCOPE], status: 'PENDING', accessTokenEnc: null, refreshTokenEnc: null, expiresAt: null, syncLeaseId: null, syncLeaseUntil: null } });
     const state = base64Url(randomBytes(32));
     const codeVerifier = base64Url(randomBytes(32));
     await prisma.searchConsoleOAuthState.create({ data: { stateHash: hashOAuthState(state), codeVerifierEnc: encryptToken(codeVerifier), projectId, userId, property: cleanProperty, expiresAt: new Date(Date.now() + 10 * 60 * 1000) } });
-    return { ...connection, authorizationUrl: this.authorizationUrl(state, codeVerifier, cleanProperty) };
+    return { id: connection.id, projectId, property: cleanProperty, status: connection.status, authorizationUrl: this.authorizationUrl(state, codeVerifier, cleanProperty) };
   }
 
   async completeCallback(state: string, code: string, error?: string) {
@@ -57,7 +58,7 @@ export class SearchConsoleService {
     if (!tokenResponse.ok || !tokens.access_token) { await this.markError(claimed); throw new BadRequestException(tokens.error ?? 'Google did not return an access token.'); }
     const verified = await fetch(`https://www.googleapis.com/webmasters/v3/sites/${encodeURIComponent(claimed.property)}`, { headers: { authorization: `Bearer ${tokens.access_token}` } });
     if (!verified.ok) { await this.markError(claimed); throw new BadRequestException('Google granted access, but the property could not be verified for this account.'); }
-    const connection = await prisma.searchConsoleConnection.update({ where: { projectId_property: { projectId: claimed.projectId, property: claimed.property } }, data: { status: 'CONNECTED', accessTokenEnc: encryptToken(tokens.access_token), refreshTokenEnc: tokens.refresh_token ? encryptToken(tokens.refresh_token) : undefined, expiresAt: tokens.expires_in ? new Date(Date.now() + tokens.expires_in * 1000) : null } });
+    const connection = await prisma.searchConsoleConnection.update({ where: { projectId_property: { projectId: claimed.projectId, property: claimed.property }, userId: claimed.userId }, data: { status: 'CONNECTED', accessTokenEnc: encryptToken(tokens.access_token), refreshTokenEnc: tokens.refresh_token ? encryptToken(tokens.refresh_token) : undefined, expiresAt: tokens.expires_in ? new Date(Date.now() + tokens.expires_in * 1000) : null, nextSyncAt: new Date(), syncLeaseId: null, syncLeaseUntil: null } });
     return { projectId: connection.projectId, property: connection.property, status: connection.status };
   }
 
