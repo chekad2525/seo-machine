@@ -43,6 +43,10 @@ CREATE INDEX "Project_organizationId_idx" ON "Project"("organizationId");
 CREATE TABLE "SearchConsoleConnection" ("id" TEXT NOT NULL, "projectId" TEXT NOT NULL, "userId" TEXT NOT NULL, "property" TEXT NOT NULL, "status" "SearchConsoleStatus" NOT NULL DEFAULT 'PENDING', "scopes" TEXT[] NOT NULL, "accessTokenEnc" TEXT, "refreshTokenEnc" TEXT, "expiresAt" TIMESTAMP(3), "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "SearchConsoleConnection_pkey" PRIMARY KEY ("id"));
 CREATE UNIQUE INDEX "SearchConsoleConnection_projectId_property_key" ON "SearchConsoleConnection"("projectId", "property");
 CREATE INDEX "SearchConsoleConnection_userId_idx" ON "SearchConsoleConnection"("userId");
+CREATE TABLE "SearchConsoleOAuthState" ("id" TEXT NOT NULL, "stateHash" TEXT NOT NULL, "codeVerifierEnc" TEXT NOT NULL, "projectId" TEXT NOT NULL, "userId" TEXT NOT NULL, "property" TEXT NOT NULL, "expiresAt" TIMESTAMP(3) NOT NULL, "consumedAt" TIMESTAMP(3), "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, CONSTRAINT "SearchConsoleOAuthState_pkey" PRIMARY KEY ("id"));
+CREATE UNIQUE INDEX "SearchConsoleOAuthState_stateHash_key" ON "SearchConsoleOAuthState"("stateHash");
+CREATE INDEX "SearchConsoleOAuthState_userId_expiresAt_idx" ON "SearchConsoleOAuthState"("userId", "expiresAt");
+CREATE INDEX "SearchConsoleOAuthState_projectId_idx" ON "SearchConsoleOAuthState"("projectId");
 
 ALTER TABLE "Account" ADD CONSTRAINT "Account_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "Session" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -56,3 +60,5 @@ ALTER TABLE "Project" ADD CONSTRAINT "Project_workspaceId_fkey" FOREIGN KEY ("wo
 ALTER TABLE "Project" ADD CONSTRAINT "Project_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 ALTER TABLE "SearchConsoleConnection" ADD CONSTRAINT "SearchConsoleConnection_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "SearchConsoleConnection" ADD CONSTRAINT "SearchConsoleConnection_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "SearchConsoleOAuthState" ADD CONSTRAINT "SearchConsoleOAuthState_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "SearchConsoleOAuthState" ADD CONSTRAINT "SearchConsoleOAuthState_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;

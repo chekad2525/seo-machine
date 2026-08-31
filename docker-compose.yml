@@ -20,6 +20,7 @@ services:
       CORS_ORIGIN: http://localhost:3000
       OTP_HASH_SECRET: ${OTP_HASH_SECRET}
       SMS_DEV_MODE: ${SMS_DEV_MODE:-true}
+      TOKEN_ENCRYPTION_KEY: ${TOKEN_ENCRYPTION_KEY}
     depends_on:
       - postgres
     ports:

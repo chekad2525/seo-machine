@@ -44,4 +44,4 @@ All authenticated API routes expect the internal `x-user-id` boundary header. On
 
 ## Google Search Console next step
 
-v0.4.0 stores the project property and exact read-only scope, but does not yet exchange OAuth tokens. Set `GSC_CLIENT_ID`, `GSC_CLIENT_SECRET`, and `GSC_REDIRECT_URI`, then implement the callback/token exchange against the `PENDING` connection before enabling production connect buttons. Encrypt tokens with a deployment-managed key before persisting them in `accessTokenEnc` and `refreshTokenEnc`.
+v0.4.0 prepares and completes the read-only OAuth flow with state + PKCE, verifies the selected property, and encrypts access/refresh tokens with AES-256-GCM before persisting them. Set `GSC_CLIENT_ID`, `GSC_CLIENT_SECRET`, `TOKEN_ENCRYPTION_KEY`, and `GSC_REDIRECT_URI` in production.

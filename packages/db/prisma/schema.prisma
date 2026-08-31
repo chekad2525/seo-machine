@@ -25,6 +25,7 @@ model User {
   createdProjects     Project[]             @relation("ProjectCreator")
   createdWorkspaces   Workspace[]           @relation("WorkspaceCreator")
   searchConsoleConnections SearchConsoleConnection[]
+  searchConsoleOAuthStates SearchConsoleOAuthState[]
 }
 
 model Account {
@@ -124,6 +125,7 @@ model Project {
   workspace      Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   createdBy      User         @relation("ProjectCreator", fields: [createdById], references: [id])
   searchConsoleConnections SearchConsoleConnection[]
+  searchConsoleOAuthStates SearchConsoleOAuthState[]
   @@unique([workspaceId, slug])
   @@index([organizationId])
 }
@@ -144,6 +146,22 @@ model SearchConsoleConnection {
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@unique([projectId, property])
   @@index([userId])
+}
+
+model SearchConsoleOAuthState {
+  id              String   @id @default(cuid())
+  stateHash       String   @unique
+  codeVerifierEnc String   @db.Text
+  projectId       String
+  userId          String
+  property        String
+  expiresAt       DateTime
+  consumedAt      DateTime?
+  createdAt       DateTime @default(now())
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId, expiresAt])
+  @@index([projectId])
 }
 
 enum MembershipRole {
