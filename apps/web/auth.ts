@@ -3,10 +3,11 @@ import Google from 'next-auth/providers/google';
 import Credentials from 'next-auth/providers/credentials';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import { prisma, normalizePhone, syncGoogleIdentity } from '@seo-machine/db';
+import { internalApiFetch } from './lib/internal-api';
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
-  session: { strategy: 'database' },
+  session: { strategy: 'jwt', maxAge: 24 * 60 * 60 },
   providers: [
     Google({
       clientId: process.env.AUTH_GOOGLE_ID,
@@ -21,22 +22,31 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const phone = normalizePhone(String(credentials?.phone ?? ''));
         const code = String(credentials?.code ?? '').trim();
         if (!phone || !/^\d{6}$/.test(code)) return null;
-        const response = await fetch(`${process.env.API_INTERNAL_URL ?? 'http://localhost:3001'}/api/v1/identity/phone/verify`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ phone, code }), cache: 'no-store' });
+        const response = await internalApiFetch('/api/v1/identity/phone/verify', { method: 'POST', identity: true, body: JSON.stringify({ phone, code }) });
         if (!response.ok) return null;
         return await response.json();
       },
     }),
   ],
   callbacks: {
-    async session({ session, user }) {
-      if (session.user) session.user.id = user.id;
+    async signIn({ account, profile }) {
+      if (account?.provider !== 'google') return true;
+      const google = profile as { sub?: string; email_verified?: boolean } | undefined;
+      return google?.email_verified === true && google.sub === account.providerAccountId;
+    },
+    async jwt({ token, user }) {
+      if (user) token.sub = user.id;
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user && token.sub) session.user.id = token.sub;
       return session;
     },
   },
   events: {
     async signIn({ user, account, profile }) {
       if (account?.provider === 'google' && account.providerAccountId) {
-        await syncGoogleIdentity(prisma, { providerAccountId: account.providerAccountId, email: user.email, name: user.name, image: user.image, emailVerified: Boolean((profile as { email_verified?: boolean } | null)?.email_verified ?? user.email) });
+        await prisma.$transaction((tx) => syncGoogleIdentity(tx, { providerAccountId: account.providerAccountId, email: user.email, name: user.name, image: user.image, emailVerified: (profile as { email_verified?: boolean } | null)?.email_verified === true }));
       }
     },
   },

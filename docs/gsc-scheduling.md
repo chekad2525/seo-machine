@@ -28,6 +28,6 @@ Search Console itself may omit rows due to its internal limits and privacy filte
 
 Live Google consent and refresh still require configured credentials and an accessible property. Local Docker was unavailable during this delivery, so PostgreSQL integration results must be checked in CI or run locally before deployment.
 
-The inherited API accepts `x-user-id` as a trusted internal header. Do not expose this API directly to the public internet: network isolation and a hardened server-to-server authentication boundary are deployment prerequisites. This change does not establish production readiness of the inherited Google/phone login flows.
+The API now verifies signed internal requests with database replay protection. Plain `x-user-id` headers are rejected. Keep network isolation and TLS in deployment, and follow [internal authentication setup and remaining security risks](internal-api-auth.md). Production readiness still requires dependency updates and live Google/phone validation.
 
 Still pending: chart aggregation, large-property daily backfill, quota-aware retry/backoff, per-connection schedule controls, and a full production security review.

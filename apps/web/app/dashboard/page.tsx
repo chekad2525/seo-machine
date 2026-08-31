@@ -2,19 +2,18 @@ import { auth } from '../../auth';
 import Link from 'next/link';
 import ConnectSearchConsole from './connect-search-console';
 import SyncSearchConsole from './sync-search-console';
-
-const apiUrl = () => process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+import { internalApiFetch } from '../../lib/internal-api';
 
 export default async function DashboardPage() {
   const session = await auth();
   if (!session?.user) return <main className="auth-shell"><div className="auth-card"><p className="eyebrow">Private workspace</p><h1>Sign in to see your signals.</h1><Link className="primary-button full" href="/sign-in">Sign in <span>→</span></Link></div></main>;
-  const statusResponse = await fetch(`${apiUrl()}/api/v1/onboarding`, { headers: { 'x-user-id': session.user.id }, cache: 'no-store' });
+  const statusResponse = await internalApiFetch('/api/v1/onboarding', { userId: session.user.id });
   const status = statusResponse.ok ? await statusResponse.json() as { organizations?: Array<{ workspaces?: Array<{ projects?: Array<{ id: string; domain: string }> }> }> } : null;
   const project = status?.organizations?.[0]?.workspaces?.[0]?.projects?.[0];
-  const connection = project ? await fetch(`${apiUrl()}/api/v1/integrations/google-search-console/status?projectId=${encodeURIComponent(project.id)}`, { headers: { 'x-user-id': session.user.id }, cache: 'no-store' }) : null;
+  const connection = project ? await internalApiFetch(`/api/v1/integrations/google-search-console/status?projectId=${encodeURIComponent(project.id)}`, { userId: session.user.id }) : null;
   const connections = connection?.ok ? await connection.json() as Array<{ status: 'PENDING' | 'CONNECTED' | 'ERROR' }> : [];
   const connected = connections.some((item) => item.status === 'CONNECTED');
-  const latestResponse = project && connected ? await fetch(`${apiUrl()}/api/v1/integrations/google-search-console/sync/latest?projectId=${encodeURIComponent(project.id)}`, { headers: { 'x-user-id': session.user.id }, cache: 'no-store' }) : null;
+  const latestResponse = project && connected ? await internalApiFetch(`/api/v1/integrations/google-search-console/sync/latest?projectId=${encodeURIComponent(project.id)}`, { userId: session.user.id }) : null;
   const latest = latestResponse?.ok ? await latestResponse.json() as { status?: 'RUNNING' | 'COMPLETED' | 'FAILED'; completedAt?: string | null } : null;
   const gscLabel = connected ? latest?.status === 'RUNNING' ? 'Syncing' : latest?.status === 'COMPLETED' ? 'Ready' : 'Connected' : 'Pending';
   const gscDescription = connected ? latest?.completedAt ? `Last sync ${new Date(latest.completedAt).toLocaleDateString()}.` : 'Connection is ready for the first sync.' : 'Read-only connection, awaiting consent.';

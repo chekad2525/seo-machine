@@ -2,6 +2,7 @@ import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { Type } from 'class-transformer';
 import { IsDateString, IsIn, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 import { ApiAuthGuard } from '../shared/api-auth.guard';
+import { PublicApi } from '../shared/internal-auth.guard';
 import { CurrentUserId } from '../shared/current-user.decorator';
 import { SearchConsoleService } from './search-console.service';
 import { SearchConsoleSyncService } from './search-console-sync.service';
@@ -23,5 +24,6 @@ export class SearchConsoleController {
   @Get('metrics') metrics(@CurrentUserId() userId: string, @Query() query: MetricsQueryDto) { return this.syncService.metrics(userId, query.projectId, query.dimension, query.limit, { startDate: query.startDate ? new Date(query.startDate) : undefined, endDate: query.endDate ? new Date(query.endDate) : undefined }); }
   @UseGuards(ApiAuthGuard)
   @Get('sync/latest') latestSync(@CurrentUserId() userId: string, @Query('projectId') projectId: string) { return this.syncService.latestRun(userId, projectId); }
+  @PublicApi()
   @Get('callback') callback(@Query('state') state: string, @Query('code') code: string, @Query('error') error?: string) { return this.service.completeCallback(state, code, error); }
 }

@@ -1,13 +1,13 @@
 import { auth } from '../../../auth';
-
-const apiUrl = () => process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+import { acceptsBrowserMutation, internalApiFetch } from '../../../lib/internal-api';
 
 export async function POST(request: Request) {
+  if (!acceptsBrowserMutation(request)) return Response.json({ message: 'Invalid request origin or content type.' }, { status: 403 });
   const session = await auth();
   const userId = session?.user?.id;
   if (!userId) return Response.json({ message: 'Sign in before setting up your SEO workspace.' }, { status: 401 });
-  const response = await fetch(`${apiUrl()}/api/v1/onboarding/complete`, {
-    method: 'POST', headers: { 'content-type': 'application/json', 'x-user-id': userId }, body: JSON.stringify(await request.json()), cache: 'no-store',
+  const response = await internalApiFetch('/api/v1/onboarding/complete', {
+    method: 'POST', userId, body: JSON.stringify(await request.json()),
   });
   return Response.json(await response.json(), { status: response.status });
 }

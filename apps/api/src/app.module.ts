@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
+import { InternalAuthGuard } from './shared/internal-auth.guard';
 import { HealthController } from './health.controller';
 import { ApiAuthGuard } from './shared/api-auth.guard';
 import { IdentityController } from './identity/identity.controller';
@@ -20,6 +22,6 @@ import { SearchConsoleSchedulerService } from './search-console/search-console-s
 
 @Module({
   controllers: [HealthController, IdentityController, OnboardingController, OrganizationController, WorkspaceController, ProjectController, SearchConsoleController],
-  providers: [ApiAuthGuard, IdentityService, SmsService, OnboardingService, OrganizationService, WorkspaceService, ProjectService, SearchConsoleService, SearchConsoleSyncService, SearchConsoleTokenService, SearchConsoleSchedulerService],
+  providers: [{ provide: APP_GUARD, useClass: InternalAuthGuard }, ApiAuthGuard, IdentityService, SmsService, OnboardingService, OrganizationService, WorkspaceService, ProjectService, SearchConsoleService, SearchConsoleSyncService, SearchConsoleTokenService, SearchConsoleSchedulerService],
 })
 export class AppModule {}

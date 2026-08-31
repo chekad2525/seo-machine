@@ -61,6 +61,12 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+model InternalApiNonce {
+  nonce     String   @id
+  expiresAt DateTime
+  @@index([expiresAt])
+}
+
 model PhoneOtp {
   id          String   @id @default(cuid())
   phone       String
