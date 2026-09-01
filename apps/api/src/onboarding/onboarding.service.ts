@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { prisma } from '@seo-machine/db';
+import { randomUUID } from 'crypto';
 import slugify from 'slugify';
 import { CompleteOnboardingDto } from './onboarding.dto';
 
@@ -23,10 +24,29 @@ export class OnboardingService {
 
   async complete(userId: string, dto: CompleteOnboardingDto) {
     const website = domain(dto.domain);
+    const current = await prisma.user.findUnique({ where: { id: userId } });
+    if (!current) throw new NotFoundException('Canonical user not found.');
+    if (current.onboardingCompletedAt) {
+      const project = await prisma.project.findFirst({
+        where: { workspace: { organization: { memberships: { some: { userId } } } } },
+        include: { workspace: { include: { organization: true } }, searchConsoleConnections: { where: { userId }, take: 1 } },
+        orderBy: { createdAt: 'asc' },
+      });
+      if (project) {
+        const connection = project.searchConsoleConnections[0];
+        return {
+          user: { id: current.id, onboardingComplete: true },
+          organization: project.workspace.organization,
+          workspace: project.workspace,
+          project,
+          searchConsole: connection ? { status: connection.status, property: connection.property } : null,
+        };
+      }
+    }
     return prisma.$transaction(async (tx) => {
       const user = await tx.user.findUnique({ where: { id: userId } });
       if (!user) throw new NotFoundException('Canonical user not found.');
-      const organization = await tx.organization.create({ data: { name: dto.organizationName.trim(), slug: slug(dto.organizationName), createdById: userId, memberships: { create: { userId, role: 'OWNER' } } } });
+      const organization = await tx.organization.create({ data: { name: dto.organizationName.trim(), slug: `${slug(dto.organizationName)}-${randomUUID().slice(0, 8)}`, createdById: userId, memberships: { create: { userId, role: 'OWNER' } } } });
       const workspace = await tx.workspace.create({ data: { organizationId: organization.id, name: dto.workspaceName.trim(), slug: slug(dto.workspaceName), createdById: userId } });
       const project = await tx.project.create({ data: { organizationId: organization.id, workspaceId: workspace.id, name: dto.projectName.trim(), slug: slug(dto.projectName), domain: website, createdById: userId } });
       if (dto.property?.trim()) await tx.searchConsoleConnection.create({ data: { projectId: project.id, userId, property: dto.property.trim(), scopes: ['https://www.googleapis.com/auth/webmasters.readonly'], status: 'PENDING' } });

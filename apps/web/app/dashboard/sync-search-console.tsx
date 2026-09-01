@@ -14,14 +14,14 @@ export default function SyncSearchConsole({ projectId, connected }: { projectId:
     try {
       const response = await fetch('/api/gsc/sync', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ projectId }) });
       const data = await response.json() as { message?: string; queryRows?: number; pageRows?: number };
-      if (!response.ok) throw new Error(data.message ?? 'Search Console data could not be synced.');
-      setMessage(`${data.queryRows ?? 0} query rows and ${data.pageRows ?? 0} page rows synced.`);
+      if (!response.ok) throw new Error(data.message ?? 'دریافت داده‌های Search Console انجام نشد.');
+      setMessage(`${data.queryRows ?? 0} عبارت و ${data.pageRows ?? 0} صفحه با موفقیت دریافت شد.`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Search Console data could not be synced.');
+      setError(err instanceof Error ? err.message : 'دریافت داده‌های Search Console انجام نشد.');
     } finally {
       setBusy(false);
     }
   }
 
-  return <div className="sync-action"><button className="primary-button" type="button" onClick={sync} disabled={!connected || busy}>{busy ? 'Syncing…' : connected ? 'Sync Search Console' : 'Connect Search Console first'} <span>↗</span></button>{message && <p className="sync-note">{message}</p>}{error && <p className="form-error">{error}</p>}</div>;
+  return <div className="sync-action"><button className="app-submit inline" type="button" onClick={sync} disabled={!connected || busy}>{busy ? 'در حال دریافت داده‌ها…' : connected ? 'همگام‌سازی داده‌ها' : 'ابتدا اتصال را برقرار کنید'} <span>↗</span></button>{message && <p className="sync-note">{message}</p>}{error && <p className="formal-form-error">{error}</p>}</div>;
 }

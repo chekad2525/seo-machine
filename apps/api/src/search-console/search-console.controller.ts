@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, Res, UseGuards } from '@nestjs/common';
+import type { Response } from 'express';
 import { Type } from 'class-transformer';
 import { IsDateString, IsIn, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 import { ApiAuthGuard } from '../shared/api-auth.guard';
@@ -25,5 +26,28 @@ export class SearchConsoleController {
   @UseGuards(ApiAuthGuard)
   @Get('sync/latest') latestSync(@CurrentUserId() userId: string, @Query('projectId') projectId: string) { return this.syncService.latestRun(userId, projectId); }
   @PublicApi()
-  @Get('callback') callback(@Query('state') state: string, @Query('code') code: string, @Query('error') error?: string) { return this.service.completeCallback(state, code, error); }
+  @Get('callback') async callback(@Query('state') state: string, @Query('code') code: string, @Query('error') error: string | undefined, @Res() response: Response) {
+    const dashboard = new URL('/dashboard', process.env.APP_ORIGIN ?? 'http://localhost:3000');
+    try {
+      const connection = await this.service.completeCallback(state, code, error);
+      dashboard.searchParams.set('gsc', 'connected');
+      dashboard.searchParams.set('projectId', connection.projectId);
+    } catch (callbackError) {
+      const message = callbackError instanceof Error ? callbackError.message : '';
+      const reason = message.includes('blocked by the server network')
+        ? 'network-blocked'
+        : message.includes('No matching Search Console property')
+        ? 'property-not-found'
+        : message.includes('disabled') || message.includes('API')
+          ? 'api-unavailable'
+          : message.includes('reach Google') || message.includes('unreadable')
+            ? 'google-unavailable'
+            : message.includes('not completed')
+              ? 'cancelled'
+              : 'connection-failed';
+      dashboard.searchParams.set('gsc', 'error');
+      dashboard.searchParams.set('reason', reason);
+    }
+    return response.redirect(dashboard.toString());
+  }
 }

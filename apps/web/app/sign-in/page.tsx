@@ -1,7 +1,28 @@
-import { signIn } from '../../auth';
+import { signIn, signOut } from '../../auth';
 import Link from 'next/link';
+import Brand from '../components/brand';
 import PhoneSignIn from './phone-sign-in';
 
 export default function SignInPage() {
-  return <main className="auth-shell"><Link className="back-link" href="/">← Back to home</Link><div className="auth-card"><p className="eyebrow">Welcome to the machine</p><h1>Bring your search work into focus.</h1><p className="muted">Sign in with Google or a verified phone code to enter your workspace.</p><form action={async () => { 'use server'; await signIn('google', { redirectTo: '/onboarding' }); }}><button className="primary-button full" type="submit">Continue with Google <span>↗</span></button></form><PhoneSignIn /><div className="auth-note"><span className="rule" />Your data stays in your workspace<span className="rule" /></div></div></main>;
+  return <main className="auth-shell app-auth" dir="rtl">
+    <header className="app-auth-header"><Brand /><Link className="app-back" href="/">بازگشت به صفحه اصلی <span>←</span></Link></header>
+    <section className="app-auth-layout">
+      <aside className="app-auth-aside">
+        <p className="app-overline">ورود امن به فضای کاری</p>
+        <h1>داده‌های جست‌وجوی شما، در یک فضای منظم.</h1>
+        <p>به پروژه‌ها، گزارش‌های Search Console و فرصت‌های رشد سایت دسترسی پیدا کنید.</p>
+        <ul><li><span>✓</span> اتصال رسمی و امن حساب گوگل</li><li><span>✓</span> دسترسی فقط‌خواندنی به داده‌ها</li><li><span>✓</span> تفکیک کامل فضای هر سازمان</li></ul>
+      </aside>
+      <div className="app-auth-card">
+        <div className="app-card-heading"><span className="app-lock" aria-hidden="true">✓</span><div><p>خوش آمدید</p><h2>وارد حساب خود شوید</h2></div></div>
+        <p className="app-card-lede">برای ادامه، روش ورود امن خود را انتخاب کنید.</p>
+        <form action={async () => { 'use server'; await signOut({ redirect: false }); await signIn('google', { redirectTo: '/onboarding' }); }}>
+          <button className="app-google-button" type="submit"><span className="google-g" aria-hidden="true">G</span> ادامه با حساب گوگل <b>←</b></button>
+        </form>
+        <div className="app-divider"><span>یا ورود با شماره موبایل</span></div>
+        <PhoneSignIn />
+        <p className="app-privacy">با ورود به SEO Machine، اطلاعات شما فقط برای ارائه خدمات این فضای کاری پردازش می‌شود.</p>
+      </div>
+    </section>
+  </main>;
 }

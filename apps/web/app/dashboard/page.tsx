@@ -1,12 +1,22 @@
 import { auth } from '../../auth';
 import Link from 'next/link';
+import Brand from '../components/brand';
 import ConnectSearchConsole from './connect-search-console';
 import SyncSearchConsole from './sync-search-console';
 import { internalApiFetch } from '../../lib/internal-api';
 
-export default async function DashboardPage() {
+const gscMessages: Record<string, string> = {
+  'network-blocked': 'ارتباط سرور با Google Search Console توسط IP یا شبکه مسدود شده است. VPN سراسری ویندوز یا پراکسی سرور را فعال کنید و دوباره تلاش کنید.',
+  'property-not-found': 'این حساب گوگل به دامنهٔ پروژه در Search Console دسترسی ندارد. همان حسابی را انتخاب کنید که مالک یا کاربر کامل Property است.',
+  'api-unavailable': 'دسترسی Search Console API در پروژهٔ Google Cloud آماده نیست. API را در همان پروژهٔ OAuth فعال کنید و دوباره تلاش کنید.',
+  'google-unavailable': 'ارتباط موقت با گوگل برقرار نشد. چند لحظه دیگر دوباره تلاش کنید.',
+  cancelled: 'فرایند اتصال در گوگل لغو شد و هیچ دسترسی‌ای ذخیره نشد.',
+  'connection-failed': 'اتصال Search Console کامل نشد. دوباره تلاش کنید یا دسترسی حساب گوگل را بررسی کنید.',
+};
+
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ gsc?: string; reason?: string }> }) {
   const session = await auth();
-  if (!session?.user) return <main className="auth-shell"><div className="auth-card"><p className="eyebrow">Private workspace</p><h1>Sign in to see your signals.</h1><Link className="primary-button full" href="/sign-in">Sign in <span>→</span></Link></div></main>;
+  if (!session?.user) return <main className="auth-shell app-guard" dir="rtl"><div className="app-guard-card"><Brand/><span className="app-guard-icon">↗</span><h1>این فضای کاری خصوصی است.</h1><p>برای مشاهده پروژه‌ها و داده‌های جست‌وجو وارد حساب خود شوید.</p><Link className="app-submit" href="/sign-in">ورود به حساب <span>←</span></Link></div></main>;
   const statusResponse = await internalApiFetch('/api/v1/onboarding', { userId: session.user.id });
   const status = statusResponse.ok ? await statusResponse.json() as { organizations?: Array<{ workspaces?: Array<{ projects?: Array<{ id: string; domain: string }> }> }> } : null;
   const project = status?.organizations?.[0]?.workspaces?.[0]?.projects?.[0];
@@ -15,7 +25,24 @@ export default async function DashboardPage() {
   const connected = connections.some((item) => item.status === 'CONNECTED');
   const latestResponse = project && connected ? await internalApiFetch(`/api/v1/integrations/google-search-console/sync/latest?projectId=${encodeURIComponent(project.id)}`, { userId: session.user.id }) : null;
   const latest = latestResponse?.ok ? await latestResponse.json() as { status?: 'RUNNING' | 'COMPLETED' | 'FAILED'; completedAt?: string | null } : null;
-  const gscLabel = connected ? latest?.status === 'RUNNING' ? 'Syncing' : latest?.status === 'COMPLETED' ? 'Ready' : 'Connected' : 'Pending';
-  const gscDescription = connected ? latest?.completedAt ? `Last sync ${new Date(latest.completedAt).toLocaleDateString()}.` : 'Connection is ready for the first sync.' : 'Read-only connection, awaiting consent.';
-  return <main className="dashboard-shell"><nav className="dashboard-nav"><div className="brand"><span className="brand-mark">⌁</span> SEO Machine</div><span className="setup-user">{session.user.email ?? session.user.name}</span></nav><section className="dashboard-content"><div className="dashboard-header"><div><p className="eyebrow">Workspace / Overview</p><h1>Your search system is ready.</h1><p className="muted">Next, connect the signal and let the useful questions surface.</p></div><span className="live-pill">● workspace live</span></div><div className="dashboard-grid"><article className="metric-card accent"><span>PROJECTS</span><strong>{project ? '01' : '00'}</strong><p>{project ? 'One site, ready to learn from.' : 'Complete setup to add a site.'}</p></article><article className="metric-card"><span>GSC STATUS</span><strong>{gscLabel}</strong><p>{gscDescription}</p></article><article className="next-card"><p className="eyebrow">Next useful move</p><h2>Bring in the query layer.</h2><p className="muted">Search Console gives your team a shared view of clicks, impressions, and the pages earning attention.</p>{project ? <><ConnectSearchConsole projectId={project.id} property={project.domain} /><SyncSearchConsole projectId={project.id} connected={connected} /></> : <Link className="secondary-button" href="/onboarding">Set up a project <span>→</span></Link>}</article></div></section></main>;
+  const gscLabel = connected ? latest?.status === 'RUNNING' ? 'در حال همگام‌سازی' : latest?.status === 'COMPLETED' ? 'آماده' : 'متصل' : 'در انتظار اتصال';
+  const gscDescription = connected ? latest?.completedAt ? `آخرین دریافت داده: ${new Date(latest.completedAt).toLocaleDateString('fa-IR')}` : 'اتصال آماده اولین همگام‌سازی است.' : 'برای دریافت داده‌ها، دسترسی فقط‌خواندنی را تأیید کنید.';
+  const query = await searchParams;
+  const callbackMessage = query.gsc === 'error' ? gscMessages[query.reason ?? 'connection-failed'] ?? gscMessages['connection-failed'] : query.gsc === 'connected' ? 'اتصال Search Console با موفقیت انجام شد.' : null;
+  return <main className="dashboard-shell app-dashboard" dir="rtl">
+    <header className="app-product-header"><Brand/><nav className="dashboard-links"><a className="active" href="#overview">نمای کلی</a><a href="#connection">اتصال‌ها</a></nav><div className="app-user-chip"><span>{(session.user.name??session.user.email??'ک').slice(0,1)}</span><div><small>حساب فعال</small><b>{session.user.email??session.user.name}</b></div></div></header>
+    <section className="formal-dashboard" id="overview">
+      {callbackMessage && <div className={`formal-callback-message ${query.gsc === 'connected' ? 'success' : 'error'}`} role="status">{callbackMessage}</div>}
+      <div className="formal-dashboard-head"><div><p className="app-overline">داشبورد عملکرد جست‌وجو</p><h1>سلام؛ فضای کاری شما آماده است.</h1><p>وضعیت پروژه و اتصال Search Console را از همین صفحه مدیریت کنید.</p></div><span className="workspace-status"><i/> فضای کاری فعال</span></div>
+      <div className="dashboard-stat-grid">
+        <article><div className="stat-label"><span>پروژه‌ها</span><b>01</b></div><strong>{project?'۰۱':'۰۰'}</strong><p>{project?'یک سایت آماده تحلیل است.':'برای شروع، اولین پروژه را بسازید.'}</p></article>
+        <article><div className="stat-label"><span>وضعیت سرچ کنسول</span><b>GSC</b></div><strong className="status-value">{gscLabel}</strong><p>{gscDescription}</p></article>
+        <article className="stat-secure"><div className="stat-label"><span>سطح دسترسی</span><b>OAuth</b></div><strong>فقط‌خواندنی</strong><p>هیچ تغییری در سایت شما انجام نمی‌شود.</p></article>
+      </div>
+      <div className="dashboard-main-grid" id="connection">
+        <article className="dashboard-action-card"><div className="action-card-head"><span className="action-icon">↗</span><div><p>اقدام پیشنهادی</p><h2>لایه داده‌های جست‌وجو را فعال کنید.</h2></div></div><p>با اتصال Search Console، کلیک‌ها، نمایش‌ها و صفحه‌های در حال رشد را در یک نمای مشترک ببینید.</p><div className="dashboard-actions">{project?<><ConnectSearchConsole projectId={project.id} property={project.domain}/><SyncSearchConsole projectId={project.id} connected={connected}/></>:<Link className="app-submit inline" href="/onboarding">ساخت اولین پروژه <span>←</span></Link>}</div></article>
+        <aside className="dashboard-readiness"><p className="app-overline">آمادگی سیستم</p><h3>مسیر شروع شما</h3><ul><li className="done"><span>✓</span><div><b>حساب کاربری</b><small>هویت شما تأیید شده است.</small></div></li><li className={project?'done':''}><span>{project?'✓':'۲'}</span><div><b>پروژه و دامنه</b><small>{project?project.domain:'هنوز ساخته نشده است.'}</small></div></li><li className={connected?'done':''}><span>{connected?'✓':'۳'}</span><div><b>اتصال Search Console</b><small>{connected?'اتصال برقرار است.':'در انتظار تأیید گوگل'}</small></div></li></ul></aside>
+      </div>
+    </section>
+  </main>;
 }

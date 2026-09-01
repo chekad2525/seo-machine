@@ -1,5 +1,23 @@
 # دریافت مشخصات اتصال Google برای SEO Machine
 
+## اجرای محلی با فایل دانلودشده (Node.js 22 یا جدیدتر)
+
+فایل محرمانه را در چت یا GitHub ارسال نکنید. دستور زیر فایل را محلی می‌خواند، هر دو callback را بررسی می‌کند و `.env` نادیده‌گرفته‌شده توسط Git را با کلیدهای تصادفی داخلی می‌سازد. اگر `.env` موجود باشد، آن را تغییر نمی‌دهد:
+
+```powershell
+node scripts/setup-local-google.mjs "C:\path\to\client_secret.json"
+```
+
+پس از روشن شدن Docker Desktop، از ریشه پروژه اجرا کنید:
+
+```powershell
+docker compose up -d postgres
+node scripts/local.mjs migrate
+node scripts/local.mjs dev
+```
+
+اجراکننده محلی `.env` را به هر دو برنامه و ابزار مهاجرت می‌رساند. برای ورود، `http://localhost:3000/sign-in` را باز کنید؛ callback را مستقیم باز نکنید. این تنظیمات فقط توسعه محلی است؛ پیامک آزمایشی روشن و همگام‌سازی خودکار خاموش است. فایل `.env` و JSON را از هر بستهٔ دانلودی و مخزن خارج نگه دارید.
+
 برای ورود با گوگل و اتصال Search Console به OAuth Client نیاز دارید؛ API Key ساده کافی نیست. Client Secret را در چت، GitHub، کد مرورگر یا فایل عمومی قرار ندهید.
 
 ۱. وارد [Google Cloud Console](https://console.cloud.google.com/) شوید و یک پروژه بسازید یا پروژه‌ی موجود را انتخاب کنید.
