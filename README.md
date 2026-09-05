@@ -1,93 +1,57 @@
-# SEO Machine v0.3.1
+# SEO Machine v0.4.0 + Scheduled Pipeline and API Authentication
 
-The first real user-facing authentication website.
+SEO Machine is a NestJS + Next.js + PostgreSQL + Prisma monorepo for turning search data into a focused operating rhythm.
 
-## Stack
+## What v0.4.0 adds
 
-- Next.js
-- Auth.js (self-hosted)
-- Google OAuth
-- Phone OTP
-- Kavenegar SMS adapter
-- NestJS API
-- PostgreSQL + Prisma
-- Docker Compose
+- Canonical SEO Machine users shared by Google OAuth and verified phone OTP.
+- Hardened identity linking: Google provider account IDs are authoritative; email is a secondary link only when Google vouches for it.
+- Atomic onboarding that creates an Organization, owner Membership, Workspace, Project, and optional pending Search Console connection in one transaction.
+- Tenant-scoped organization, workspace, project, and Search Console preparation APIs.
+- Auth.js Google provider and phone OTP credential entry point.
+- Read-only Google Search Console scope preparation: `webmasters.readonly`.
+- Search Console query/page ingestion for a bounded, idempotent daily metric window.
+- Optional scheduled sync, automatic Google token refresh, and database lease protection.
+- Signed internal requests, database replay protection, and atomic phone OTP verification.
+- Postgres migration, Docker Compose, tests, and GitHub Actions CI.
 
-## Why this auth architecture?
-
-Auth.js is free/open source and runs on SEO Machine infrastructure. Phone OTP
-uses an adapter, so Kavenegar can later be replaced without rewriting auth.
-
-## Local development
-
-Copy:
+## Run locally
 
 ```bash
 cp .env.example .env
+npm install
+npm run db:generate
+npm run db:migrate
+npm run dev
 ```
 
-Generate two strong random values for:
+Open `http://localhost:3000`. The API health check is at `http://localhost:3001/api/v1/health`.
 
-```env
-AUTH_SECRET=
-OTP_HASH_SECRET=
-```
+For local phone OTP tests, set `SMS_DEV_MODE=true`; the NestJS API response includes a `devCode`. In production, set `SMS_DEV_MODE=false`, `KAVENEGAR_API_KEY`, and `KAVENEGAR_VERIFY_TEMPLATE` to use the Kavenegar VerifyLookup adapter. Requests are rate-limited to one code per minute and failed delivery invalidates the stored OTP.
 
-For local phone-login testing, keep:
+## API surface
 
-```env
-SMS_DEV_MODE=true
-```
+All non-public API routes require a short-lived request signature from the Next.js server. A plain `x-user-id` is rejected. User requests are bound to the Auth.js session; identity requests use a separate signed scope. Configure the same random `INTERNAL_API_SECRET` in API and web, and `APP_ORIGIN` in web. See [API authentication and deployment](docs/internal-api-auth.md).
 
-The OTP will be printed in the NestJS API logs and no SMS credit is consumed.
+| Method | Route | Purpose |
+| --- | --- | --- |
+| POST | `/api/v1/identity/google/sync` | Canonical Google identity sync |
+| POST | `/api/v1/identity/phone/request` | Issue a hashed, expiring OTP |
+| POST | `/api/v1/identity/phone/verify` | Consume OTP and upsert verified phone user |
+| GET | `/api/v1/onboarding` | Read setup state |
+| POST | `/api/v1/onboarding/complete` | Atomically create initial tenant graph |
+| GET/POST | `/api/v1/organizations` | List or create organizations |
+| GET/POST | `/api/v1/workspaces` | List or create workspaces |
+| GET/POST | `/api/v1/projects` | List or create projects |
+| GET/POST | `/api/v1/integrations/google-search-console/status\|prepare` | Read or prepare GSC connection |
+| POST | `/api/v1/integrations/google-search-console/sync` | Fetch and upsert query/page metrics |
+| GET | `/api/v1/integrations/google-search-console/metrics` | Read stored query or page metrics |
+| GET | `/api/v1/integrations/google-search-console/sync/latest` | Read the latest sync run |
 
-Run:
+## Google Search Console next step
 
-```bash
-docker compose up --build
-```
+v0.4.0 prepares and completes the read-only OAuth flow with state + PKCE, verifies the selected property, and encrypts access/refresh tokens with AES-256-GCM before persisting them. Set `GSC_CLIENT_ID`, `GSC_CLIENT_SECRET`, `TOKEN_ENCRYPTION_KEY`, and `GSC_REDIRECT_URI` in production.
 
-Open:
+The Search Data Pipeline requests a rolling 28-day window ending two days before today with `dataState=final`. This delay is a conservative default, not a guarantee of complete Google coverage. A requested range may be between 1 and 31 days. Sync runs are recorded as `RUNNING`, `COMPLETED`, or `FAILED`. Atomic window replacement keeps retries idempotent and removes stale rows. The API fetches up to 25,000 rows per page and stores query and page dimensions separately.
 
-- Landing: http://localhost:3000
-- Sign in: http://localhost:3000/sign-in
-- Dashboard: http://localhost:3000/dashboard
-- API health: http://localhost:3001/api/v1/health
-
-## Google OAuth
-
-Set:
-
-```env
-AUTH_GOOGLE_ID=
-AUTH_GOOGLE_SECRET=
-```
-
-Google OAuth callback:
-
-```text
-http://localhost:3000/api/auth/callback/google
-```
-
-For production replace localhost with your production domain.
-
-## Kavenegar
-
-Set:
-
-```env
-KAVENEGAR_API_KEY=
-KAVENEGAR_VERIFY_TEMPLATE=
-SMS_DEV_MODE=false
-```
-
-The VerifyLookup adapter sends the 6-digit OTP.
-
-## Next milestone
-
-v0.4.0:
-- synchronize Google identities into SEO Machine User;
-- onboarding;
-- Organization/Workspace creation;
-- Project creation;
-- Google Search Console connection.
+Set `GSC_SYNC_ENABLED=true` on a long-running API worker to enable scheduled sync. Access tokens refresh automatically; revoked authorization requires reconnection. See [scheduling, testing, and deployment constraints](docs/gsc-scheduling.md). Public deployment remains blocked by dependency advisories and outstanding production validation documented in [API authentication](docs/internal-api-auth.md).

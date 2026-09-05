@@ -1,75 +1,58 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: seo-machine-postgres
-    restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-seo}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-seo_dev}
-      POSTGRES_DB: ${POSTGRES_DB:-seo_machine}
+      POSTGRES_USER: seo
+      POSTGRES_PASSWORD: seo
+      POSTGRES_DB: seo_machine
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5433:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-seo} -d ${POSTGRES_DB:-seo_machine}"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
-  redis:
-    image: redis:7-alpine
-    container_name: seo-machine-redis
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
+      - seo-machine-postgres:/var/lib/postgresql/data
 
   api:
     build:
-      context: ./apps/api
-    container_name: seo-machine-api
-    restart: unless-stopped
+      context: .
+      dockerfile: apps/api/Dockerfile
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-seo}:${POSTGRES_PASSWORD:-seo_dev}@postgres:5432/${POSTGRES_DB:-seo_machine}?schema=public
-      REDIS_URL: redis://redis:6379
-      API_PORT: 3001
+      DATABASE_URL: postgresql://seo:seo@postgres:5432/seo_machine?schema=public
+      PORT: 3001
+      CORS_ORIGIN: http://localhost:3000
+      NODE_ENV: production
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:?Set INTERNAL_API_SECRET}
       OTP_HASH_SECRET: ${OTP_HASH_SECRET}
+      SMS_DEV_MODE: ${SMS_DEV_MODE:-false}
+      GSC_CLIENT_ID: ${GSC_CLIENT_ID}
+      GSC_CLIENT_SECRET: ${GSC_CLIENT_SECRET}
+      GSC_REDIRECT_URI: ${GSC_REDIRECT_URI}
+      GSC_SYNC_ENABLED: ${GSC_SYNC_ENABLED:-false}
+      TOKEN_ENCRYPTION_KEY: ${TOKEN_ENCRYPTION_KEY}
       KAVENEGAR_API_KEY: ${KAVENEGAR_API_KEY}
       KAVENEGAR_VERIFY_TEMPLATE: ${KAVENEGAR_VERIFY_TEMPLATE}
-      SMS_DEV_MODE: ${SMS_DEV_MODE:-true}
-    ports:
-      - "3001:3001"
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      - postgres
+    ports:
+      - "127.0.0.1:3001:3001"
 
   web:
     build:
-      context: ./apps/web
-      args:
-    container_name: seo-machine-web
-    restart: unless-stopped
+      context: .
+      dockerfile: apps/web/Dockerfile
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:3001/api/v1
-      API_INTERNAL_URL: http://api:3001/api/v1
+      DATABASE_URL: postgresql://seo:seo@postgres:5432/seo_machine?schema=public
+      API_INTERNAL_URL: http://api:3001
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:?Set INTERNAL_API_SECRET}
+      APP_ORIGIN: ${APP_ORIGIN:-http://localhost:3000}
+      AUTH_URL: ${APP_ORIGIN:-http://localhost:3000}
+      AUTH_TRUST_HOST: 'true'
+      NODE_ENV: production
       AUTH_SECRET: ${AUTH_SECRET}
       AUTH_GOOGLE_ID: ${AUTH_GOOGLE_ID}
       AUTH_GOOGLE_SECRET: ${AUTH_GOOGLE_SECRET}
-      AUTH_TRUST_HOST: "true"
-    ports:
-      - "3000:3000"
     depends_on:
       - api
+    ports:
+      - "3000:3000"
 
 volumes:
-  postgres_data:
-  redis_data:
+  seo-machine-postgres:

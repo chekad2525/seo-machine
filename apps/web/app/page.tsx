@@ -1,85 +1,54 @@
-import Link from "next/link";
-import { auth } from "@/auth";
+import Link from 'next/link';
 
-export default async function HomePage() {
-  const session = await auth();
+const features = [
+  ['داده','تصمیم‌گیری با داده واقعی','کلیک، نمایش، جایگاه و نرخ کلیک را مستقیماً از Google Search Console دریافت کنید؛ بدون فایل‌های پراکنده و گزارش‌های دستی.'],
+  ['تمرکز','فرصت‌ها را زودتر ببینید','صفحه‌ها و عبارت‌هایی را که ظرفیت رشد دارند پیدا کنید و بدانید بهینه‌سازی بعدی باید از کجا شروع شود.'],
+  ['ساختار','چند سایت، یک فضای منظم','سازمان، فضای کاری و پروژه‌های مختلف را جدا نگه دارید و هر سایت را با دسترسی مشخص مدیریت کنید.'],
+];
+const steps = [
+  ['۱','حساب خود را بسازید','با حساب گوگل یا شماره موبایل وارد شوید و فضای کاری اختصاصی خود را ایجاد کنید.'],
+  ['۲','سایت را متصل کنید','دسترسی فقط‌خواندنی Search Console را تأیید کنید؛ SEO Machine اجازه تغییر در سایت شما ندارد.'],
+  ['۳','سیگنال‌های رشد را دنبال کنید','داده‌ها را همگام کنید و روند عملکرد هر پروژه را در یک داشبورد روشن ببینید.'],
+];
 
-  return (
-    <main className="shell">
-      <header className="topbar">
-        <div className="brand">
-          <div className="brand-mark">S</div>
-          <span>SEO Machine</span>
-        </div>
+export default function HomePage() {
+  return <main className="fa-home" dir="rtl">
+    <header className="fa-header">
+      <Link className="fa-logo" href="/" aria-label="صفحه اصلی SEO Machine"><Logo /><span><b>SEO</b> Machine<small>ماشین رشد جست‌وجو</small></span></Link>
+      <nav className="fa-nav" aria-label="منوی اصلی"><a href="#features">امکانات</a><a href="#workflow">نحوه کار</a><a href="#security">امنیت</a></nav>
+      <div className="fa-header-actions"><Link className="fa-login" href="/sign-in">ورود</Link><Link className="fa-button fa-button-small" href="/sign-in">شروع رایگان <span>←</span></Link></div>
+    </header>
 
-        <span className="pill">Evidence-first SEO OS</span>
-      </header>
+    <section className="fa-hero">
+      <div className="fa-hero-copy">
+        <p className="fa-kicker"><span /> مرکز فرماندهی سئوی شما</p>
+        <h1>از داده‌های جست‌وجو،<br /><em>تصمیم روشن</em> بسازید.</h1>
+        <p className="fa-hero-lede">SEO Machine داده‌های Search Console را به یک مسیر کاری قابل‌فهم تبدیل می‌کند؛ تا به‌جای جابه‌جایی بین گزارش‌ها، فرصت‌های واقعی رشد سایت را پیدا کنید و با تمرکز جلو بروید.</p>
+        <div className="fa-hero-actions"><Link className="fa-button" href="/sign-in">ساخت فضای کاری <span>←</span></Link><a className="fa-text-link" href="#workflow">ببینید چگونه کار می‌کند <span>↓</span></a></div>
+        <div className="fa-trust-row"><span>دسترسی فقط‌خواندنی</span><span>اتصال امن گوگل</span><span>مناسب چند پروژه</span></div>
+      </div>
+      <DashboardPreview />
+    </section>
 
-      <section className="hero">
-        <div>
-          <div className="eyebrow">SEO OPERATING SYSTEM</div>
-          <h1>
-            سئو را مدیریت نکن.
-            <br />
-            هدایتش کن.
-          </h1>
+    <section className="fa-proof"><p>برای تیم‌هایی که می‌خواهند سئو را <strong>منظم، قابل‌اندازه‌گیری و پیوسته</strong> پیش ببرند.</p><div><span>یک منبع داده معتبر</span><span>اولویت‌بندی واضح</span><span>گزارش بدون آشفتگی</span></div></section>
 
-          <p className="lead">
-            SEO Machine داده‌های واقعی سایت را به تصمیم، مأموریت و اقدام تبدیل
-            می‌کند؛ با معماری Evidence-first و کنترل کامل کاربر روی اجرای تغییرات.
-          </p>
+    <section className="fa-section" id="features">
+      <div className="fa-section-heading"><p>چرا SEO Machine؟</p><h2>همه‌چیز برای دیدن<br />قدم بعدی.</h2><span>ابزار بیشتر همیشه به معنی نتیجه بهتر نیست. اینجا فقط اطلاعاتی را می‌بینید که برای تصمیم بعدی لازم دارید.</span></div>
+      <div className="fa-feature-grid">{features.map(([tag,title,text],i)=><article className="fa-feature" key={title}><div className="fa-feature-top"><span>{tag}</span><b>{['۰۱','۰۲','۰۳'][i]}</b></div><FeatureIcon index={i}/><h3>{title}</h3><p>{text}</p></article>)}</div>
+    </section>
 
-          <div className="actions">
-            <Link
-              className="btn btn-primary"
-              href={session ? "/dashboard" : "/sign-in"}
-            >
-              {session ? "ورود به Mission Control" : "ورود به SEO Machine"}
-            </Link>
-            <Link className="btn btn-secondary" href="#architecture">
-              مشاهده معماری
-            </Link>
-          </div>
+    <section className="fa-workflow" id="workflow">
+      <div className="fa-workflow-intro"><p>شروع بدون پیچیدگی</p><h2>از اتصال تا اولین بینش، در سه قدم.</h2><div className="fa-workflow-line" /></div>
+      <div className="fa-steps">{steps.map(([n,title,text])=><article key={n}><b>{n}</b><div><h3>{title}</h3><p>{text}</p></div></article>)}</div>
+    </section>
 
-          <div className="feature-list" id="architecture">
-            <div className="feature">
-              <strong>Evidence</strong>
-              <span>داده قبل از AI؛ تصمیم‌ها باید قابل اثبات باشند.</span>
-            </div>
-            <div className="feature">
-              <strong>Decision</strong>
-              <span>سیستم قبل از اجرا، اولویت، ریسک و دلیل را مشخص می‌کند.</span>
-            </div>
-            <div className="feature">
-              <strong>Execution</strong>
-              <span>اجرای کنترل‌شده با Approval، Audit و Verification.</span>
-            </div>
-          </div>
-        </div>
+    <section className="fa-security" id="security"><div className="fa-security-mark" aria-hidden="true"><span>✓</span></div><div><p>امنیت از ابتدا، نه در انتها</p><h2>داده‌های شما فقط برای تحلیل خوانده می‌شوند.</h2></div><ul><li>اتصال رسمی OAuth گوگل</li><li>دسترسی فقط‌خواندنی Search Console</li><li>نگهداری رمزگذاری‌شده توکن‌ها</li><li>تفکیک داده‌های سازمان‌ها و پروژه‌ها</li></ul></section>
 
-        <div className="visual" aria-hidden="true">
-          <div className="orb" />
-          <div className="console-card">
-            <div className="eyebrow">MISSION CONTROL</div>
-            <div className="console-row">
-              <span className="console-label">Health</span>
-              <span className="console-value positive">Healthy</span>
-            </div>
-            <div className="console-row">
-              <span className="console-label">Opportunity</span>
-              <span className="console-value">High</span>
-            </div>
-            <div className="console-row">
-              <span className="console-label">Momentum</span>
-              <span className="console-value positive">+18.4%</span>
-            </div>
-            <div className="console-row">
-              <span className="console-label">Top Mission</span>
-              <span className="console-value">Refresh content</span>
-            </div>
-          </div>
-        </div>
-      </section>
-    </main>
-  );
+    <section className="fa-final-cta"><p>آماده‌اید سئو را منظم‌تر پیش ببرید؟</p><h2>اولین پروژه‌تان را بسازید<br />و سیگنال‌های رشد را ببینید.</h2><Link className="fa-button fa-button-light" href="/sign-in">شروع با SEO Machine <span>←</span></Link></section>
+    <footer className="fa-footer"><div className="fa-footer-brand"><Logo /><div><b>SEO Machine</b><p>فضای کاری هوشمند برای رشد جست‌وجوی ارگانیک</p></div></div><div className="fa-footer-links"><a href="#features">امکانات</a><a href="#workflow">نحوه کار</a><a href="#security">امنیت</a><Link href="/sign-in">ورود به حساب</Link></div><div className="fa-footer-bottom"><span>© ۱۴۰۵ SEO Machine</span><span>ساخته‌شده برای وب فارسی</span></div></footer>
+  </main>;
 }
+
+function Logo(){return <span className="fa-logo-mark" aria-hidden="true"><i/><i/><i/></span>}
+function FeatureIcon({index}:{index:number}){return <div className={`fa-feature-icon icon-${index+1}`} aria-hidden="true"><i/><i/><i/></div>}
+function DashboardPreview(){return <div className="fa-command-wrap" aria-label="نمونه داشبورد عملکرد جست‌وجو"><div className="fa-orbit one"/><div className="fa-orbit two"/><div className="fa-command"><div className="fa-command-head"><span><i/> اتصال برقرار است</span><b>۲۸ روز اخیر</b></div><div className="fa-command-title"><p>نمای کلی جست‌وجوی ارگانیک</p><span>به‌روزرسانی: همین حالا</span></div><div className="fa-metric-row"><div><small>کلیک‌ها</small><strong>۱۲,۸۴۰</strong><em>٪۲۸٫۴ ↑</em></div><div><small>نمایش‌ها</small><strong>۳۴۱K</strong><em>٪۱۸٫۲ ↑</em></div><div><small>میانگین جایگاه</small><strong>۸٫۶</strong><em>۱٫۳ ↑</em></div></div><div className="fa-chart" aria-hidden="true">{Array.from({length:12},(_,i)=><span key={i}/>)}<svg viewBox="0 0 600 150" preserveAspectRatio="none"><path d="M0 125 C55 130 62 90 112 105 S175 120 205 80 S270 95 305 58 S365 76 400 48 S466 65 495 30 S555 38 600 8"/></svg></div><div className="fa-query"><span>فرصت امروز</span><p>۳۴ عبارت در آستانه صفحه اول قرار دارند.</p><b>مشاهده ←</b></div></div><div className="fa-floating-note"><span>سیگنال جدید</span><strong>«خدمات سئو»</strong><small>رشد نمایش در ۷ روز اخیر</small></div></div>}

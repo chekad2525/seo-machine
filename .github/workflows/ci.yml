@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main, 'feature/**']
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: seo
+          POSTGRES_PASSWORD: seo
+          POSTGRES_DB: seo_machine
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd="pg_isready -U seo -d seo_machine"
+          --health-interval=10s --health-timeout=5s --health-retries=5
+    env:
+      DATABASE_URL: postgresql://seo:seo@localhost:5432/seo_machine?schema=public
+      AUTH_SECRET: ci-secret
+      OTP_HASH_SECRET: ci-otp-secret
+      RUN_DATABASE_TESTS: 'true'
+      GSC_SYNC_ENABLED: 'false'
+      INTERNAL_API_SECRET: ci-only-internal-key-not-for-real-deployment-2026
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run db:generate
+      - run: npm run build -w @seo-machine/db
+      - run: npm run db:migrate
+      - run: npx prisma validate --schema packages/db/prisma/schema.prisma
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - run: node scripts/check-web-boundary.mjs

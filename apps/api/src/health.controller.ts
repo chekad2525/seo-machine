@@ -1,20 +1,11 @@
 import { Controller, Get } from '@nestjs/common';
-import { PrismaService } from './database/prisma.service';
+import { PublicApi } from './shared/internal-auth.guard';
 
 @Controller('health')
 export class HealthController {
-  constructor(private readonly prisma: PrismaService) {}
-
   @Get()
-  async health() {
-    await this.prisma.$queryRaw`SELECT 1`;
-
-    return {
-      status: 'ok',
-      service: 'seo-machine-api',
-      database: 'ok',
-      version: '0.2.0',
-      timestamp: new Date().toISOString(),
-    };
+  @PublicApi()
+  health() {
+    return { ok: true, service: 'seo-machine-api', version: '0.4.0' };
   }
 }

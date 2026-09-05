@@ -1,37 +1,28 @@
-import { redirect } from "next/navigation";
-import { auth } from "@/auth";
-import SignInPanel from "./sign-in-panel";
+import { signIn, signOut } from '../../auth';
+import Link from 'next/link';
+import Brand from '../components/brand';
+import PhoneSignIn from './phone-sign-in';
 
-export default async function SignInPage() {
-  const session = await auth();
-  if (session) redirect("/dashboard");
-
-  return (
-    <main className="auth-layout">
-      <section className="auth-story">
-        <div className="brand">
-          <div className="brand-mark">S</div>
-          <span>SEO Machine</span>
-        </div>
-
-        <div className="auth-title">
-          <div className="eyebrow">SECURE ACCESS</div>
-          <h1>ورود به مرکز فرماندهی سئو</h1>
-          <p className="auth-help">
-            با Google یا شماره موبایل وارد شوید. برای ورود موبایلی یک کد
-            یک‌بارمصرف ارسال می‌شود.
-          </p>
-        </div>
-
-        <p className="auth-help">
-          موتور احراز هویت Auth.js روی سرور خود SEO Machine اجرا می‌شود و سرویس
-          پیامک از طریق Adapter قابل تعویض است.
-        </p>
-      </section>
-
-      <section className="auth-panel">
-        <SignInPanel />
-      </section>
-    </main>
-  );
+export default function SignInPage() {
+  return <main className="auth-shell app-auth" dir="rtl">
+    <header className="app-auth-header"><Brand /><Link className="app-back" href="/">بازگشت به صفحه اصلی <span>←</span></Link></header>
+    <section className="app-auth-layout">
+      <aside className="app-auth-aside">
+        <p className="app-overline">ورود امن به فضای کاری</p>
+        <h1>داده‌های جست‌وجوی شما، در یک فضای منظم.</h1>
+        <p>به پروژه‌ها، گزارش‌های Search Console و فرصت‌های رشد سایت دسترسی پیدا کنید.</p>
+        <ul><li><span>✓</span> اتصال رسمی و امن حساب گوگل</li><li><span>✓</span> دسترسی فقط‌خواندنی به داده‌ها</li><li><span>✓</span> تفکیک کامل فضای هر سازمان</li></ul>
+      </aside>
+      <div className="app-auth-card">
+        <div className="app-card-heading"><span className="app-lock" aria-hidden="true">✓</span><div><p>خوش آمدید</p><h2>وارد حساب خود شوید</h2></div></div>
+        <p className="app-card-lede">برای ادامه، روش ورود امن خود را انتخاب کنید.</p>
+        <form action={async () => { 'use server'; await signOut({ redirect: false }); await signIn('google', { redirectTo: '/onboarding' }); }}>
+          <button className="app-google-button" type="submit"><span className="google-g" aria-hidden="true">G</span> ادامه با حساب گوگل <b>←</b></button>
+        </form>
+        <div className="app-divider"><span>یا ورود با شماره موبایل</span></div>
+        <PhoneSignIn />
+        <p className="app-privacy">با ورود به SEO Machine، اطلاعات شما فقط برای ارائه خدمات این فضای کاری پردازش می‌شود.</p>
+      </div>
+    </section>
+  </main>;
 }

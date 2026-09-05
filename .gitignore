@@ -1,0 +1,18 @@
+node_modules/
+.npm-cache/
+.pnpm-store/
+.next/
+dist/
+coverage/
+.local-logs/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+*.log
+*.zip
+prisma/dev.db
+
+# Local ChatGPT/Codex project metadata and synced references
+AGENTS.md
+sources/

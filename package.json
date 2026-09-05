@@ -1,0 +1,21 @@
+{
+  "name": "seo-machine",
+  "private": true,
+  "version": "0.4.0",
+  "packageManager": "npm@10.8.2",
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "build": "npm run db:generate && npm run build -w @seo-machine/db && npm run build --workspaces --if-present",
+    "dev": "concurrently \"npm run dev -w @seo-machine/api\" \"npm run dev -w @seo-machine/web\"",
+    "db:generate": "npm run db:generate -w @seo-machine/db",
+    "db:migrate": "npm run db:migrate -w @seo-machine/db",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "devDependencies": {
+    "@prisma/client": "5.22.0",
+    "concurrently": "^9.0.1",
+    "typescript": "^5.6.3"
+  }
+}

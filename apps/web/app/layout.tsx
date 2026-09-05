@@ -1,19 +1,8 @@
-import type { Metadata } from "next";
-import "./globals.css";
+import './globals.css';
+import type { Metadata } from 'next';
 
-export const metadata: Metadata = {
-  title: "SEO Machine",
-  description: "Evidence-first SEO operating system",
-};
+export const metadata: Metadata = { title: 'SEO Machine | مرکز فرماندهی رشد جست‌وجو', description: 'داده‌های Google Search Console را به تصمیم‌های روشن و فرصت‌های قابل اقدام تبدیل کنید.' };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  return (
-    <html lang="fa" dir="rtl">
-      <body>{children}</body>
-    </html>
-  );
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return <html lang="fa"><body>{children}</body></html>;
 }
