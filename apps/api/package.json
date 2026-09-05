@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "nest start --watch",
-    "build": "nest build",
+    "prebuild": "npm --prefix ../.. run db:generate && npm --prefix ../.. run build -w @seo-machine/db",
+    "build": "nest build --path tsconfig.build.json",
     "start": "node dist/main.js",
     "test": "jest --runInBand",
     "typecheck": "tsc --noEmit"
