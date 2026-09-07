@@ -1,9 +1,13 @@
-import { signIn, signOut } from '../../auth';
+import { auth, signIn } from '../../auth';
+import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import Brand from '../components/brand';
 import PhoneSignIn from './phone-sign-in';
 
-export default function SignInPage() {
+export default async function SignInPage() {
+  const session = await auth();
+  if (session?.user) redirect('/onboarding');
+
   return <main className="auth-shell app-auth" dir="rtl">
     <header className="app-auth-header"><Brand /><Link className="app-back" href="/">بازگشت به صفحه اصلی <span>←</span></Link></header>
     <section className="app-auth-layout">
@@ -16,7 +20,7 @@ export default function SignInPage() {
       <div className="app-auth-card">
         <div className="app-card-heading"><span className="app-lock" aria-hidden="true">✓</span><div><p>خوش آمدید</p><h2>وارد حساب خود شوید</h2></div></div>
         <p className="app-card-lede">برای ادامه، روش ورود امن خود را انتخاب کنید.</p>
-        <form action={async () => { 'use server'; await signOut({ redirect: false }); await signIn('google', { redirectTo: '/onboarding' }); }}>
+        <form action={async () => { 'use server'; await signIn('google', { redirectTo: '/onboarding' }); }}>
           <button className="app-google-button" type="submit"><span className="google-g" aria-hidden="true">G</span> ادامه با حساب گوگل <b>←</b></button>
         </form>
         <div className="app-divider"><span>یا ورود با شماره موبایل</span></div>
