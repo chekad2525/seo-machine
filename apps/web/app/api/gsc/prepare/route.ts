@@ -7,5 +7,6 @@ export async function POST(request: Request) {
   const userId = session?.user?.id;
   if (!userId) return Response.json({ message: 'Sign in before connecting Search Console.' }, { status: 401 });
   const response = await internalApiFetch('/api/v1/integrations/google-search-console/prepare', { method: 'POST', userId, body: JSON.stringify(await request.json()) });
-  return Response.json(await response.json(), { status: response.status });
+  const payload = await response.json().catch(() => ({ message: `The API returned an unexpected response (HTTP ${response.status}).` }));
+  return Response.json(payload, { status: response.status });
 }

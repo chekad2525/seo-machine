@@ -8,7 +8,7 @@ export const GSC_TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
 export const GSC_SITES_ENDPOINT = 'https://www.googleapis.com/webmasters/v3/sites';
 
 function base64Url(value: Buffer) { return value.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, ''); }
-function encryptionKey() { const secret = process.env.TOKEN_ENCRYPTION_KEY ?? (process.env.NODE_ENV === 'production' ? '' : 'local-development-token-key'); if (!secret) throw new Error('TOKEN_ENCRYPTION_KEY is required in production.'); return createHash('sha256').update(secret).digest(); }
+function encryptionKey() { const secret = process.env.TOKEN_ENCRYPTION_KEY ?? (process.env.NODE_ENV === 'production' ? '' : 'local-development-token-key'); if (!secret) throw new ServiceUnavailableException('TOKEN_ENCRYPTION_KEY is not configured on the API.'); return createHash('sha256').update(secret).digest(); }
 export function hashOAuthState(state: string) { return createHash('sha256').update(state).digest('hex'); }
 
 export function encryptToken(value: string) {
