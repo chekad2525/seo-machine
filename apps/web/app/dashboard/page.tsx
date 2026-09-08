@@ -58,7 +58,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const query = await searchParams;
   const callbackMessage = query.gsc === 'error' ? gscMessages[query.reason ?? 'connection-failed'] ?? gscMessages['connection-failed'] : query.gsc === 'connected' ? 'اتصال Search Console با موفقیت انجام شد.' : null;
   return <main className="dashboard-shell app-dashboard" dir="rtl">
-    <header className="app-product-header"><Brand/><nav className="dashboard-links"><a className="active" href="#overview">نمای کلی</a><a href="#connection">اتصال‌ها</a></nav><div className="app-user-chip"><span>{(session.user.name??session.user.email??'ک').slice(0,1)}</span><div><small>حساب فعال</small><b>{session.user.email??session.user.name}</b></div></div></header>
+    <header className="app-product-header"><Brand/><nav className="dashboard-links"><a className="active" href="#overview">نمای کلی</a>{connected && <Link href="/analytics">تحلیل‌ها</Link>}<a href="#connection">اتصال‌ها</a></nav><div className="app-user-chip"><span>{(session.user.name??session.user.email??'ک').slice(0,1)}</span><div><small>حساب فعال</small><b>{session.user.email??session.user.name}</b></div></div></header>
     <section className="formal-dashboard" id="overview">
       {callbackMessage && <div className={`formal-callback-message ${query.gsc === 'connected' ? 'success' : 'error'}`} role="status">{callbackMessage}</div>}
       <div className="formal-dashboard-head"><div><p className="app-overline">داشبورد عملکرد جست‌وجو</p><h1>سلام؛ فضای کاری شما آماده است.</h1><p>وضعیت پروژه و اتصال Search Console را از همین صفحه مدیریت کنید.</p></div><span className="workspace-status"><i/> فضای کاری فعال</span></div>
