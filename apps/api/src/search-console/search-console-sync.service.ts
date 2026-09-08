@@ -2,6 +2,8 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException, 
 import { prisma } from '@seo-machine/db';
 import { randomUUID } from 'crypto';
 import { SearchConsoleTokenService } from './search-console-token.service';
+import { aggregateAnalytics, percentChange } from './search-console-analytics';
+import { buildSearchConsoleInsights } from './search-console-insights';
 
 const SEARCH_ANALYTICS_LIMIT = 25_000;
 const MAX_SYNC_DAYS = 31;
@@ -95,6 +97,58 @@ export class SearchConsoleSyncService {
     const connection = await prisma.searchConsoleConnection.findFirst({ where: { projectId, userId, project: { workspace: { organization: { memberships: { some: { userId } } } } } }, select: { id: true } });
     if (!connection) throw new NotFoundException('Project or Search Console connection not found.');
     return prisma.searchConsoleSyncRun.findFirst({ where: { connectionId: connection.id }, orderBy: { startedAt: 'desc' } });
+  }
+
+  async summary(userId: string, projectId: string, requestedRange?: Partial<DateRange>) {
+    const connection = await prisma.searchConsoleConnection.findFirst({
+      where: { projectId, userId, project: { workspace: { organization: { memberships: { some: { userId } } } } } },
+      select: { id: true },
+    });
+    if (!connection) throw new NotFoundException('Project or Search Console connection not found.');
+
+    const range = this.validRange(requestedRange);
+    const dayCount = Math.round((range.endDate.getTime() - range.startDate.getTime()) / 86_400_000) + 1;
+    const previousEnd = new Date(range.startDate);
+    previousEnd.setUTCDate(previousEnd.getUTCDate() - 1);
+    const previousStart = new Date(previousEnd);
+    previousStart.setUTCDate(previousStart.getUTCDate() - dayCount + 1);
+    const select = { date: true, clicks: true, impressions: true, position: true } as const;
+    const [currentRows, previousRows] = await Promise.all([
+      prisma.searchConsolePageMetric.findMany({ where: { connectionId: connection.id, date: { gte: range.startDate, lte: range.endDate } }, select }),
+      prisma.searchConsolePageMetric.findMany({ where: { connectionId: connection.id, date: { gte: previousStart, lte: previousEnd } }, select }),
+    ]);
+    const current = aggregateAnalytics(currentRows);
+    const previous = aggregateAnalytics(previousRows);
+
+    return {
+      range: { startDate: formatDate(range.startDate), endDate: formatDate(range.endDate) },
+      totals: current.totals,
+      comparison: {
+        clicksPercent: percentChange(current.totals.clicks, previous.totals.clicks),
+        impressionsPercent: percentChange(current.totals.impressions, previous.totals.impressions),
+        ctrPercent: percentChange(current.totals.ctr, previous.totals.ctr),
+        positionDelta: previous.totals.impressions > 0 ? current.totals.position - previous.totals.position : null,
+      },
+      daily: current.daily,
+    };
+  }
+
+  async insights(userId: string, projectId: string, requestedRange?: Partial<DateRange>) {
+    const connection = await prisma.searchConsoleConnection.findFirst({
+      where: { projectId, userId, project: { workspace: { organization: { memberships: { some: { userId } } } } } },
+      select: { id: true },
+    });
+    if (!connection) throw new NotFoundException('Project or Search Console connection not found.');
+    const range = this.validRange(requestedRange);
+    const where = { connectionId: connection.id, date: { gte: range.startDate, lte: range.endDate } };
+    const [queryRows, pageRows] = await Promise.all([
+      prisma.searchConsoleQueryMetric.findMany({ where, select: { query: true, clicks: true, impressions: true, position: true } }),
+      prisma.searchConsolePageMetric.findMany({ where, select: { page: true, clicks: true, impressions: true, position: true } }),
+    ]);
+    return {
+      range: { startDate: formatDate(range.startDate), endDate: formatDate(range.endDate) },
+      ...buildSearchConsoleInsights(queryRows, pageRows),
+    };
   }
 
   private async fetchRows(connectionId: string, property: string, leaseId: string, range: DateRange, dimension: 'query'): Promise<QueryMetricRow[]>;
