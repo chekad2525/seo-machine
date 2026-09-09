@@ -1,4 +1,4 @@
-import { defaultSyncRange, formatDate, normalizeMetricRow } from './search-console-sync.service';
+import { defaultSyncRange, formatDate, normalizeMetricRow, normalizeOpportunityMetricRow } from './search-console-sync.service';
 
 describe('Search Console ingestion helpers', () => {
   it('defaults to the latest complete 28-day window', () => {
@@ -12,5 +12,6 @@ describe('Search Console ingestion helpers', () => {
     expect(normalizeMetricRow({ keys: ['not-a-date', 'page'] }, 'page')).toBeNull();
     expect(normalizeMetricRow({ keys: ['2026-02-30', 'page'] }, 'page')).toBeNull();
     expect(normalizeMetricRow({ keys: ['2026-08-29', 'page'], clicks: Infinity }, 'page')).toBeNull();
+    expect(normalizeOpportunityMetricRow({ keys: ['2026-08-29', 'seo machine', 'https://example.com/'], clicks: 4, impressions: 40, ctr: .1, position: 3 })).toMatchObject({ query: 'seo machine', page: 'https://example.com/' });
   });
 });
