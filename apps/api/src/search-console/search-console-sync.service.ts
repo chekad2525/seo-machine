@@ -15,6 +15,7 @@ type DateRange = { startDate: Date; endDate: Date };
 type MetricValues = { date: Date; clicks: number; impressions: number; ctr: number; position: number };
 type QueryMetricRow = MetricValues & { query: string };
 type PageMetricRow = MetricValues & { page: string };
+type OpportunityMetricRow = MetricValues & { query: string; page: string };
 
 export function formatDate(date: Date) { return date.toISOString().slice(0, 10); }
 
@@ -35,6 +36,18 @@ export function normalizeMetricRow(row: MetricRow, dimension: 'query' | 'page'):
   if ((row.ctr ?? 0) > 1) return null;
   const values = { date: parsedDate, clicks: Math.round(row.clicks ?? 0), impressions: Math.round(row.impressions ?? 0), ctr: row.ctr ?? 0, position: row.position ?? 0 };
   return dimension === 'query' ? { ...values, query: key } : { ...values, page: key };
+}
+
+export function normalizeOpportunityMetricRow(row: MetricRow): OpportunityMetricRow | null {
+  const query = row.keys?.[1]?.trim();
+  const page = row.keys?.[2]?.trim();
+  const date = row.keys?.[0];
+  if (!query || !page || !date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+  const parsedDate = new Date(`${date}T00:00:00.000Z`);
+  if (!Number.isFinite(parsedDate.getTime()) || formatDate(parsedDate) !== date) return null;
+  if ([row.clicks, row.impressions, row.ctr, row.position].some((value) => value !== undefined && (!Number.isFinite(value) || value < 0))) return null;
+  if ((row.ctr ?? 0) > 1) return null;
+  return { date: parsedDate, query, page, clicks: Math.round(row.clicks ?? 0), impressions: Math.round(row.impressions ?? 0), ctr: row.ctr ?? 0, position: row.position ?? 0 };
 }
 
 @Injectable()
@@ -61,17 +74,20 @@ export class SearchConsoleSyncService {
       // Sequential requests avoid competing refreshes; the lease fences all writes.
       const queryRows = await this.fetchRows(connection.id, connection.property, leaseId, range, 'query');
       const pageRows = await this.fetchRows(connection.id, connection.property, leaseId, range, 'page');
+      const opportunityRows = await this.fetchRows(connection.id, connection.property, leaseId, range, 'query-page');
       await prisma.$transaction(async (tx) => {
         const owned = await tx.searchConsoleConnection.updateMany({ where: { ...scope, id: connection.id, syncLeaseId: leaseId, syncLeaseUntil: { gt: new Date() } }, data: { syncLeaseId: null, syncLeaseUntil: null, nextSyncAt: new Date(Date.now() + 24 * 60 * 60_000) } });
         if (owned.count !== 1) throw new ConflictException('Search Console sync ownership changed.');
         const window = { connectionId: connection.id, date: { gte: range.startDate, lte: range.endDate } };
         await tx.searchConsoleQueryMetric.deleteMany({ where: window });
         await tx.searchConsolePageMetric.deleteMany({ where: window });
+        await tx.searchConsoleOpportunityMetric.deleteMany({ where: window });
         for (let offset = 0; offset < queryRows.length; offset += 1000) await tx.searchConsoleQueryMetric.createMany({ data: queryRows.slice(offset, offset + 1000).map((row) => ({ connectionId: connection.id, ...row })) });
         for (let offset = 0; offset < pageRows.length; offset += 1000) await tx.searchConsolePageMetric.createMany({ data: pageRows.slice(offset, offset + 1000).map((row) => ({ connectionId: connection.id, ...row })) });
-        await tx.searchConsoleSyncRun.update({ where: { id: run.id }, data: { status: 'COMPLETED', rowsUpserted: queryRows.length + pageRows.length, completedAt: new Date() } });
+        for (let offset = 0; offset < opportunityRows.length; offset += 1000) await tx.searchConsoleOpportunityMetric.createMany({ data: opportunityRows.slice(offset, offset + 1000).map((row) => ({ connectionId: connection.id, ...row })) });
+        await tx.searchConsoleSyncRun.update({ where: { id: run.id }, data: { status: 'COMPLETED', rowsUpserted: queryRows.length + pageRows.length + opportunityRows.length, completedAt: new Date() } });
       }, { timeout: 120_000 });
-      return { id: run.id, status: 'COMPLETED', rangeStart: formatDate(range.startDate), rangeEnd: formatDate(range.endDate), queryRows: queryRows.length, pageRows: pageRows.length };
+      return { id: run.id, status: 'COMPLETED', rangeStart: formatDate(range.startDate), rangeEnd: formatDate(range.endDate), queryRows: queryRows.length, pageRows: pageRows.length, opportunityRows: opportunityRows.length };
     } catch (error) {
       await prisma.$transaction(async (tx) => {
         await tx.searchConsoleConnection.updateMany({ where: { id: connection.id, syncLeaseId: leaseId }, data: { syncLeaseId: null, syncLeaseUntil: null, nextSyncAt: new Date(Date.now() + 15 * 60_000) } });
@@ -141,32 +157,35 @@ export class SearchConsoleSyncService {
     if (!connection) throw new NotFoundException('Project or Search Console connection not found.');
     const range = this.validRange(requestedRange);
     const where = { connectionId: connection.id, date: { gte: range.startDate, lte: range.endDate } };
-    const [queryRows, pageRows] = await Promise.all([
+    const [queryRows, pageRows, opportunityRows] = await Promise.all([
       prisma.searchConsoleQueryMetric.findMany({ where, select: { query: true, clicks: true, impressions: true, position: true } }),
       prisma.searchConsolePageMetric.findMany({ where, select: { page: true, clicks: true, impressions: true, position: true } }),
+      prisma.searchConsoleOpportunityMetric.findMany({ where, select: { query: true, page: true, clicks: true, impressions: true, position: true } }),
     ]);
     return {
       range: { startDate: formatDate(range.startDate), endDate: formatDate(range.endDate) },
-      ...buildSearchConsoleInsights(queryRows, pageRows),
+      ...buildSearchConsoleInsights(queryRows, pageRows, opportunityRows),
     };
   }
 
   private async fetchRows(connectionId: string, property: string, leaseId: string, range: DateRange, dimension: 'query'): Promise<QueryMetricRow[]>;
   private async fetchRows(connectionId: string, property: string, leaseId: string, range: DateRange, dimension: 'page'): Promise<PageMetricRow[]>;
-  private async fetchRows(connectionId: string, property: string, leaseId: string, range: DateRange, dimension: 'query' | 'page') {
-    const rows: Array<QueryMetricRow | PageMetricRow> = [];
+  private async fetchRows(connectionId: string, property: string, leaseId: string, range: DateRange, dimension: 'query-page'): Promise<OpportunityMetricRow[]>;
+  private async fetchRows(connectionId: string, property: string, leaseId: string, range: DateRange, dimension: 'query' | 'page' | 'query-page') {
+    const rows: Array<QueryMetricRow | PageMetricRow | OpportunityMetricRow> = [];
     for (let startRow = 0; startRow < 100_000; startRow += SEARCH_ANALYTICS_LIMIT) {
       let token = await this.tokens.accessToken(connectionId, leaseId);
-      const request = () => fetch(`${SEARCH_ANALYTICS_ENDPOINT}/${encodeURIComponent(property)}/searchAnalytics/query`, { method: 'POST', signal: AbortSignal.timeout(30_000), headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' }, body: JSON.stringify({ startDate: formatDate(range.startDate), endDate: formatDate(range.endDate), dataState: 'final', dimensions: ['date', dimension], rowLimit: SEARCH_ANALYTICS_LIMIT, startRow }) });
+      const dimensions = dimension === 'query-page' ? ['date', 'query', 'page'] : ['date', dimension];
+      const request = () => fetch(`${SEARCH_ANALYTICS_ENDPOINT}/${encodeURIComponent(property)}/searchAnalytics/query`, { method: 'POST', signal: AbortSignal.timeout(30_000), headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' }, body: JSON.stringify({ startDate: formatDate(range.startDate), endDate: formatDate(range.endDate), dataState: 'final', dimensions, rowLimit: SEARCH_ANALYTICS_LIMIT, startRow }) });
       let response = await request();
       if (response.status === 401) { token = await this.tokens.accessToken(connectionId, leaseId, true); response = await request(); }
       if (response.status === 401) throw new BadRequestException('Search Console authorization expired. Reconnect the property.');
       if (!response.ok) throw new ServiceUnavailableException('Search Console did not return metric data.');
       const payload = await response.json() as SearchAnalyticsResponse;
       if (!payload || (payload.rows !== undefined && !Array.isArray(payload.rows))) throw new ServiceUnavailableException('Google returned invalid metric data.');
-      const batch: Array<QueryMetricRow | PageMetricRow> = [];
+      const batch: Array<QueryMetricRow | PageMetricRow | OpportunityMetricRow> = [];
       for (const row of payload.rows ?? []) {
-        const normalized = dimension === 'query' ? normalizeMetricRow(row, 'query') : normalizeMetricRow(row, 'page');
+        const normalized = dimension === 'query-page' ? normalizeOpportunityMetricRow(row) : dimension === 'query' ? normalizeMetricRow(row, 'query') : normalizeMetricRow(row, 'page');
         if (!normalized || normalized.date < range.startDate || normalized.date > range.endDate) throw new ServiceUnavailableException('Google returned invalid metric data.');
         batch.push(normalized);
       }
