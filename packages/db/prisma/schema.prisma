@@ -155,8 +155,9 @@ model SearchConsoleConnection {
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   queryMetrics   SearchConsoleQueryMetric[]
   pageMetrics    SearchConsolePageMetric[]
+  opportunityMetrics SearchConsoleOpportunityMetric[]
   syncRuns       SearchConsoleSyncRun[]
-  @@unique([projectId, property])
+  @@unique([projectId, userId, property])
   @@index([userId])
   @@index([status, nextSyncAt])
 }
@@ -202,6 +203,22 @@ model SearchConsolePageMetric {
   createdAt    DateTime @default(now())
   connection   SearchConsoleConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
   @@unique([connectionId, date, page])
+  @@index([connectionId, date])
+}
+
+model SearchConsoleOpportunityMetric {
+  id           String   @id @default(cuid())
+  connectionId String
+  date         DateTime @db.Date
+  query        String
+  page         String
+  clicks       Int
+  impressions  Int
+  ctr          Float
+  position     Float
+  createdAt    DateTime @default(now())
+  connection   SearchConsoleConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  @@unique([connectionId, date, query, page])
   @@index([connectionId, date])
 }
 
