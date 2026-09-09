@@ -7,6 +7,7 @@ jest.mock('@seo-machine/db', () => ({ prisma: {
   searchConsoleSyncRun: { create: jest.fn(), update: jest.fn(), updateMany: jest.fn() },
   searchConsoleQueryMetric: { deleteMany: jest.fn(), createMany: jest.fn() },
   searchConsolePageMetric: { deleteMany: jest.fn(), createMany: jest.fn() },
+  searchConsoleOpportunityMetric: { deleteMany: jest.fn(), createMany: jest.fn() },
   $transaction: jest.fn(),
 } }));
 
@@ -37,7 +38,7 @@ describe('Sync failure and retry boundaries', () => {
     (global.fetch as jest.Mock).mockResolvedValueOnce(Response.json({}, { status: 401 }));
     await expect(service.sync('user', 'project')).resolves.toMatchObject({ status: 'COMPLETED' });
     expect(accessToken).toHaveBeenCalledWith('conn', expect.any(String), true);
-    expect(global.fetch).toHaveBeenCalledTimes(3);
+    expect(global.fetch).toHaveBeenCalledTimes(4);
   });
 
   it('does not erase stored metrics or retry indefinitely on repeated 401', async () => {
