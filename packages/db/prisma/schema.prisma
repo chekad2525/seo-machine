@@ -26,6 +26,7 @@ model User {
   createdWorkspaces   Workspace[]           @relation("WorkspaceCreator")
   searchConsoleConnections SearchConsoleConnection[]
   searchConsoleOAuthStates SearchConsoleOAuthState[]
+  trackedKeywords      TrackedKeyword[]
 }
 
 model Account {
@@ -132,6 +133,7 @@ model Project {
   createdBy      User         @relation("ProjectCreator", fields: [createdById], references: [id])
   searchConsoleConnections SearchConsoleConnection[]
   searchConsoleOAuthStates SearchConsoleOAuthState[]
+  trackedKeywords      TrackedKeyword[]
   @@unique([workspaceId, slug])
   @@index([organizationId])
 }
@@ -220,6 +222,57 @@ model SearchConsoleOpportunityMetric {
   connection   SearchConsoleConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
   @@unique([connectionId, date, query, page])
   @@index([connectionId, date])
+}
+
+model TrackedKeyword {
+  id         String   @id @default(cuid())
+  projectId  String
+  userId     String
+  query      String
+  targetPage String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rankSnapshots KeywordRankSnapshot[]
+  serpTasks     KeywordSerpTask[]
+  @@unique([projectId, userId, query])
+  @@index([projectId, userId])
+}
+
+model KeywordRankSnapshot {
+  id               String   @id @default(cuid())
+  trackedKeywordId String
+  checkDate        DateTime @db.Date
+  provider         String   @default("dataforseo")
+  device           String
+  locationCode     Int
+  rankAbsolute     Int?
+  rankGroup        Int?
+  resultUrl        String?  @db.Text
+  serpFeatures     String[]
+  costUsd          Float    @default(0)
+  checkedAt        DateTime @default(now())
+  trackedKeyword   TrackedKeyword @relation(fields: [trackedKeywordId], references: [id], onDelete: Cascade)
+  @@unique([trackedKeywordId, checkDate, device, locationCode])
+  @@index([trackedKeywordId, checkedAt])
+}
+
+model KeywordSerpTask {
+  id               String   @id @default(cuid())
+  trackedKeywordId String
+  externalTaskId   String   @unique
+  checkDate        DateTime @db.Date
+  device           String
+  locationCode     Int
+  status           String   @default("PENDING")
+  costUsd          Float    @default(0)
+  errorMessage     String?  @db.Text
+  requestedAt      DateTime @default(now())
+  completedAt      DateTime?
+  trackedKeyword   TrackedKeyword @relation(fields: [trackedKeywordId], references: [id], onDelete: Cascade)
+  @@unique([trackedKeywordId, checkDate, device, locationCode])
+  @@index([status, requestedAt])
 }
 
 model SearchConsoleOAuthState {

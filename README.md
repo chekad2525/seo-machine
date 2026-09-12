@@ -46,6 +46,7 @@ All non-public API routes require a short-lived request signature from the Next.
 | GET/POST | `/api/v1/integrations/google-search-console/status\|prepare` | Read or prepare GSC connection |
 | POST | `/api/v1/integrations/google-search-console/sync` | Fetch and upsert query/page metrics |
 | GET | `/api/v1/integrations/google-search-console/metrics` | Read stored query or page metrics |
+| GET | `/api/v1/integrations/google-search-console/summary` | Read weighted KPIs, daily trend, and period comparison |
 | GET | `/api/v1/integrations/google-search-console/sync/latest` | Read the latest sync run |
 
 ## Google Search Console next step
