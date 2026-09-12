@@ -1,7 +1,7 @@
 'use server';
 
 import { AuthError } from 'next-auth';
-import { normalizePhone } from '@seo-machine/db';
+import { normalizePhone } from '@seo-machine/db/web';
 import { signIn } from '../../auth';
 import { internalApiFetch } from '../../lib/internal-api';
 

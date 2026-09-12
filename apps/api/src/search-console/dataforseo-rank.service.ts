@@ -1,5 +1,6 @@
 import { BadGatewayException, Injectable, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import { prisma } from '@seo-machine/db';
+import { resolveKeywordTrackingSettings, trackingLocationCode, type KeywordTrackingSettings } from '../keyword-tracking/keyword-tracking-settings';
 
 type DfsResult = { id?: string; items?: DfsItem[] };
 type DfsTask = { id?: string; status_code?: number; status_message?: string; cost?: number; result?: DfsResult[] };
@@ -22,11 +23,9 @@ export class DataForSeoRankService {
   private config() {
     const login = process.env.DATAFORSEO_LOGIN?.trim();
     const password = process.env.DATAFORSEO_PASSWORD?.trim();
-    const locationCode = Number(process.env.DATAFORSEO_LOCATION_CODE);
-    const languageCode = process.env.DATAFORSEO_LANGUAGE_CODE?.trim() || 'fa';
     const depth = Math.min(Math.max(Number(process.env.DATAFORSEO_DEPTH ?? 100), 10), 100);
-    if (!login || !password || !Number.isInteger(locationCode) || locationCode <= 0) throw new ServiceUnavailableException('DataForSEO is not configured.');
-    return { login, password, locationCode, languageCode, depth };
+    if (!login || !password) throw new ServiceUnavailableException('DataForSEO is not configured.');
+    return { login, password, depth };
   }
 
   private async request(path: string, init?: RequestInit) {
@@ -40,7 +39,7 @@ export class DataForSeoRankService {
   }
 
   private async scope(userId: string, projectId: string) {
-    const project = await prisma.project.findFirst({ where: { id: projectId, workspace: { organization: { memberships: { some: { userId } } } } }, select: { id: true, domain: true } });
+    const project = await prisma.project.findFirst({ where: { id: projectId, workspace: { organization: { memberships: { some: { userId } } } } }, select: { id: true, domain: true, keywordTrackingSetting: { select: { countryCode: true, languageCode: true, locationName: true, device: true } } } });
     if (!project) throw new NotFoundException('Project not found.');
     return project;
   }
@@ -74,16 +73,18 @@ export class DataForSeoRankService {
   async enqueue(userId: string, projectId: string) {
     const project = await this.scope(userId, projectId);
     const config = this.config();
+    const settings = resolveKeywordTrackingSettings(project.keywordTrackingSetting as Partial<KeywordTrackingSettings> | null);
+    const locationCode = trackingLocationCode(settings);
     const checkDate = utcDate();
     await this.collect(userId, projectId);
-    const tracked = await prisma.trackedKeyword.findMany({ where: { projectId, userId, serpTasks: { none: { checkDate, device: 'desktop', locationCode: config.locationCode } } }, select: { id: true, query: true } });
+    const tracked = await prisma.trackedKeyword.findMany({ where: { projectId, userId, serpTasks: { none: { checkDate, device: settings.device, locationCode } } }, select: { id: true, query: true } });
     let queued = 0;
     for (const group of batches(tracked, 100)) {
-      const payload = await this.request('/v3/serp/google/organic/task_post', { method: 'POST', body: JSON.stringify(group.map((item) => ({ keyword: item.query, location_code: config.locationCode, language_code: config.languageCode, device: 'desktop', depth: config.depth, stop_crawl_on_match: [{ match_value: domainOf(project.domain), match_type: 'with_subdomains' }], find_targets_in: ['organic', 'featured_snippet'], tag: item.id }))) });
+      const payload = await this.request('/v3/serp/google/organic/task_post', { method: 'POST', body: JSON.stringify(group.map((item) => ({ keyword: item.query, location_name: settings.locationName, language_code: settings.languageCode, device: settings.device, depth: config.depth, stop_crawl_on_match: [{ match_value: domainOf(project.domain), match_type: 'with_subdomains' }], find_targets_in: ['organic', 'featured_snippet'], tag: item.id }))) });
       for (let index = 0; index < group.length; index++) {
         const task = payload.tasks?.[index];
         if (!task?.id || (task.status_code && task.status_code !== 20100)) continue;
-        await prisma.keywordSerpTask.create({ data: { trackedKeywordId: group[index].id, externalTaskId: task.id, checkDate, device: 'desktop', locationCode: config.locationCode, costUsd: task.cost ?? 0 } });
+        await prisma.keywordSerpTask.create({ data: { trackedKeywordId: group[index].id, externalTaskId: task.id, checkDate, device: settings.device, locationCode, costUsd: task.cost ?? 0 } });
         queued++;
       }
     }

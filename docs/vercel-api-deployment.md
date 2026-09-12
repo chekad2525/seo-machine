@@ -24,6 +24,12 @@ schedulers require a persistent process. Keyword ranks use the daily Vercel Cron
 in `apps/api/vercel.json`; set `CRON_SECRET` so Vercel can authenticate that request.
 Manual Search Console sync can still be tested within function duration limits.
 
+For keyword tracking with Serper, set `SERP_PROVIDER=serper` and `SERPER_API_KEY`.
+For DataForSEO, set `SERP_PROVIDER=dataforseo`, `DATAFORSEO_LOGIN`, and
+`DATAFORSEO_PASSWORD`. Country, language, location, and device are selected inside
+each project's keyword tracker instead of environment variables. Serper tracking is
+desktop-only in this application; DataForSEO supports desktop and mobile.
+
 Check `/api/v1/health` after deployment, then test authenticated application requests
 and the Google connection. Do not run database migrations automatically in preview builds.
 

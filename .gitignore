@@ -13,6 +13,7 @@ import.env
 *.log
 *.zip
 prisma/dev.db
+packages/db/.prisma-client/
 
 # Local ChatGPT/Codex project metadata and synced references
 AGENTS.md

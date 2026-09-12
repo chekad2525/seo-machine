@@ -1,5 +1,6 @@
 import { BadGatewayException, Injectable, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import { prisma } from '@seo-machine/db';
+import { resolveKeywordTrackingSettings, trackingLocationCode, type KeywordTrackingSettings } from '../keyword-tracking/keyword-tracking-settings';
 
 type SerperOrganicResult = { link?: string; position?: number };
 type SerperResponse = {
@@ -27,12 +28,6 @@ function batches<T>(items: T[], size: number) {
   return output;
 }
 
-function stableLocationCode(value: string) {
-  let hash = 0;
-  for (let index = 0; index < value.length; index++) hash = ((hash << 5) - hash + value.charCodeAt(index)) | 0;
-  return Math.abs(hash) || 1;
-}
-
 export function findSerperRank(items: SerperOrganicResult[], targetDomain: string) {
   const domain = domainOf(targetDomain);
   const match = items.find((item) => item.link && domainOf(item.link) === domain);
@@ -47,35 +42,30 @@ export function findSerperRank(items: SerperOrganicResult[], targetDomain: strin
 export class SerperRankService {
   private config() {
     const apiKey = process.env.SERPER_API_KEY?.trim();
-    const country = process.env.SERPER_COUNTRY?.trim().toLowerCase() || 'ir';
-    const language = process.env.SERPER_LANGUAGE?.trim().toLowerCase() || 'fa';
-    const location = process.env.SERPER_LOCATION?.trim() || '';
     const resultCount = Math.min(Math.max(Number(process.env.SERPER_RESULT_COUNT ?? 100), 10), 100);
     const maxKeywords = Math.min(Math.max(Number(process.env.SERPER_MAX_KEYWORDS_PER_RUN ?? 100), 1), 100);
     if (!apiKey) throw new ServiceUnavailableException('Serper is not configured. Add SERPER_API_KEY to the API environment variables.');
-    if (!/^[a-z]{2}$/.test(country) || !/^[a-z]{2}$/.test(language)) throw new ServiceUnavailableException('Serper country or language code is invalid.');
     if (!Number.isInteger(resultCount) || !Number.isInteger(maxKeywords)) throw new ServiceUnavailableException('Serper numeric settings are invalid.');
-    const locationKey = `${country}:${language}:${location || 'country'}`;
-    return { apiKey, country, language, location, resultCount, maxKeywords, locationCode: stableLocationCode(locationKey) };
+    return { apiKey, resultCount, maxKeywords };
   }
 
   private async scope(userId: string, projectId: string) {
     const project = await prisma.project.findFirst({
       where: { id: projectId, workspace: { organization: { memberships: { some: { userId } } } } },
-      select: { id: true, domain: true },
+      select: { id: true, domain: true, keywordTrackingSetting: { select: { countryCode: true, languageCode: true, locationName: true, device: true } } },
     });
     if (!project) throw new NotFoundException('Project not found.');
     return project;
   }
 
-  private async search(keyword: string, config: ReturnType<SerperRankService['config']>) {
+  private async search(keyword: string, config: ReturnType<SerperRankService['config']>, settings: ReturnType<typeof resolveKeywordTrackingSettings>) {
     const body: Record<string, string | number> = {
       q: keyword,
-      gl: config.country,
-      hl: config.language,
+      gl: settings.countryCode,
+      hl: settings.languageCode,
       num: config.resultCount,
     };
-    if (config.location) body.location = config.location;
+    if (settings.locationName) body.location = settings.locationName;
     const response = await fetch('https://google.serper.dev/search', {
       method: 'POST',
       signal: AbortSignal.timeout(30_000),
@@ -97,10 +87,12 @@ export class SerperRankService {
   async check(userId: string, projectId: string) {
     const project = await this.scope(userId, projectId);
     const config = this.config();
+    const settings = { ...resolveKeywordTrackingSettings(project.keywordTrackingSetting as Partial<KeywordTrackingSettings> | null), device: 'desktop' as const };
+    const locationCode = trackingLocationCode(settings);
     const checkDate = utcDate();
     const completedToday = await prisma.keywordRankSnapshot.findMany({
       where: {
-        provider: 'serper', checkDate, device: 'desktop', locationCode: config.locationCode,
+        provider: 'serper', checkDate, device: settings.device, locationCode,
         trackedKeyword: { projectId, userId },
       },
       select: { trackedKeywordId: true },
@@ -120,18 +112,18 @@ export class SerperRankService {
     for (const group of batches(tracked, 5)) {
       await Promise.all(group.map(async (keyword) => {
         try {
-          const payload = await this.search(keyword.query, config);
+          const payload = await this.search(keyword.query, config, settings);
           const rank = findSerperRank(payload.organic ?? [], project.domain);
           const serpFeatures = Object.keys(payload).filter((key) => !['searchParameters', 'credits'].includes(key));
           await prisma.keywordRankSnapshot.upsert({
             where: {
               trackedKeywordId_checkDate_device_locationCode: {
-                trackedKeywordId: keyword.id, checkDate, device: 'desktop', locationCode: config.locationCode,
+                trackedKeywordId: keyword.id, checkDate, device: settings.device, locationCode,
               },
             },
             create: {
-              trackedKeywordId: keyword.id, checkDate, provider: 'serper', device: 'desktop',
-              locationCode: config.locationCode, serpFeatures, ...rank,
+              trackedKeywordId: keyword.id, checkDate, provider: 'serper', device: settings.device,
+              locationCode, serpFeatures, ...rank,
             },
             update: { provider: 'serper', serpFeatures, checkedAt: new Date(), ...rank },
           });

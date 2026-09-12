@@ -1,5 +1,5 @@
 import 'server-only';
-import { internalApiSecret, signInternalRequest } from '@seo-machine/db';
+import { internalApiSecret, signInternalRequest } from '@seo-machine/db/web';
 
 type Options = { method?: 'GET' | 'POST'; body?: string; userId?: string; identity?: boolean };
 

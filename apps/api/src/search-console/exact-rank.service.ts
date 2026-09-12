@@ -9,7 +9,7 @@ export function exactRankConfiguration(env: NodeJS.ProcessEnv = process.env) {
   const valid = value === 'serper' || value === 'dataforseo';
   const configured = valid && (value === 'serper'
     ? Boolean(env.SERPER_API_KEY?.trim())
-    : Boolean(env.DATAFORSEO_LOGIN?.trim() && env.DATAFORSEO_PASSWORD?.trim() && Number(env.DATAFORSEO_LOCATION_CODE) > 0));
+    : Boolean(env.DATAFORSEO_LOGIN?.trim() && env.DATAFORSEO_PASSWORD?.trim()));
   return { provider: value, valid, configured };
 }
 

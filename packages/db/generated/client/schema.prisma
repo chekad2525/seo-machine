@@ -1,6 +1,6 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../.prisma-client"
+  output   = "../generated/client"
 }
 
 datasource db {
@@ -9,25 +9,25 @@ datasource db {
 }
 
 model User {
-  id                  String                @id @default(cuid())
-  name                String?
-  email               String?               @unique
-  emailVerified       DateTime?
-  image               String?
-  phone               String?               @unique
-  phoneVerifiedAt     DateTime?
-  onboardingCompletedAt DateTime?
-  createdAt           DateTime              @default(now())
-  updatedAt           DateTime              @updatedAt
-  accounts            Account[]
-  sessions            Session[]
-  memberships         Membership[]
-  createdOrganizations Organization[]       @relation("OrganizationCreator")
-  createdProjects     Project[]             @relation("ProjectCreator")
-  createdWorkspaces   Workspace[]           @relation("WorkspaceCreator")
+  id                       String                    @id @default(cuid())
+  name                     String?
+  email                    String?                   @unique
+  emailVerified            DateTime?
+  image                    String?
+  phone                    String?                   @unique
+  phoneVerifiedAt          DateTime?
+  onboardingCompletedAt    DateTime?
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
+  accounts                 Account[]
+  sessions                 Session[]
+  memberships              Membership[]
+  createdOrganizations     Organization[]            @relation("OrganizationCreator")
+  createdProjects          Project[]                 @relation("ProjectCreator")
+  createdWorkspaces        Workspace[]               @relation("WorkspaceCreator")
   searchConsoleConnections SearchConsoleConnection[]
   searchConsoleOAuthStates SearchConsoleOAuthState[]
-  trackedKeywords      TrackedKeyword[]
+  trackedKeywords          TrackedKeyword[]
 }
 
 model Account {
@@ -44,6 +44,7 @@ model Account {
   id_token          String? @db.Text
   session_state     String?
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@unique([provider, providerAccountId])
   @@index([userId])
 }
@@ -53,6 +54,7 @@ model Session {
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
 }
 
@@ -60,23 +62,26 @@ model VerificationToken {
   identifier String
   token      String   @unique
   expires    DateTime
+
   @@unique([identifier, token])
 }
 
 model InternalApiNonce {
   nonce     String   @id
   expiresAt DateTime
+
   @@index([expiresAt])
 }
 
 model PhoneOtp {
-  id          String   @id @default(cuid())
-  phone       String
-  codeHash    String
-  attempts    Int      @default(0)
-  expiresAt   DateTime
-  consumedAt  DateTime?
-  createdAt   DateTime @default(now())
+  id         String    @id @default(cuid())
+  phone      String
+  codeHash   String
+  attempts   Int       @default(0)
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
   @@index([phone, expiresAt])
 }
 
@@ -94,13 +99,14 @@ model Organization {
 }
 
 model Membership {
-  id             String       @id @default(cuid())
+  id             String         @id @default(cuid())
   userId         String
   organizationId String
   role           MembershipRole @default(MEMBER)
-  createdAt      DateTime     @default(now())
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime       @default(now())
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
   @@unique([userId, organizationId])
   @@index([organizationId])
 }
@@ -115,27 +121,29 @@ model Workspace {
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   createdBy      User         @relation("WorkspaceCreator", fields: [createdById], references: [id])
   projects       Project[]
+
   @@unique([organizationId, slug])
   @@index([organizationId])
 }
 
 model Project {
-  id             String       @id @default(cuid())
-  organizationId String
-  workspaceId    String
-  name           String
-  slug           String
-  domain         String
-  createdById    String
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  workspace      Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  createdBy      User         @relation("ProjectCreator", fields: [createdById], references: [id])
+  id                       String                    @id @default(cuid())
+  organizationId           String
+  workspaceId              String
+  name                     String
+  slug                     String
+  domain                   String
+  createdById              String
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
+  organization             Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  workspace                Workspace                 @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy                User                      @relation("ProjectCreator", fields: [createdById], references: [id])
   searchConsoleConnections SearchConsoleConnection[]
   searchConsoleOAuthStates SearchConsoleOAuthState[]
-  trackedKeywords      TrackedKeyword[]
-  keywordTrackingSetting KeywordTrackingSetting?
+  trackedKeywords          TrackedKeyword[]
+  keywordTrackingSetting   KeywordTrackingSetting?
+
   @@unique([workspaceId, slug])
   @@index([organizationId])
 }
@@ -153,154 +161,163 @@ model KeywordTrackingSetting {
 }
 
 model SearchConsoleConnection {
-  id             String   @id @default(cuid())
-  projectId      String
-  userId         String
-  property       String
-  status         SearchConsoleStatus @default(PENDING)
-  scopes         String[]
-  accessTokenEnc String?  @db.Text
-  refreshTokenEnc String? @db.Text
-  expiresAt      DateTime?
-  nextSyncAt     DateTime @default(now())
-  syncLeaseId    String?
-  syncLeaseUntil DateTime?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  project        Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  queryMetrics   SearchConsoleQueryMetric[]
-  pageMetrics    SearchConsolePageMetric[]
+  id                 String                           @id @default(cuid())
+  projectId          String
+  userId             String
+  property           String
+  status             SearchConsoleStatus              @default(PENDING)
+  scopes             String[]
+  accessTokenEnc     String?                          @db.Text
+  refreshTokenEnc    String?                          @db.Text
+  expiresAt          DateTime?
+  nextSyncAt         DateTime                         @default(now())
+  syncLeaseId        String?
+  syncLeaseUntil     DateTime?
+  createdAt          DateTime                         @default(now())
+  updatedAt          DateTime                         @updatedAt
+  project            Project                          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user               User                             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  queryMetrics       SearchConsoleQueryMetric[]
+  pageMetrics        SearchConsolePageMetric[]
   opportunityMetrics SearchConsoleOpportunityMetric[]
-  syncRuns       SearchConsoleSyncRun[]
+  syncRuns           SearchConsoleSyncRun[]
+
   @@unique([projectId, userId, property])
   @@index([userId])
   @@index([status, nextSyncAt])
 }
 
 model SearchConsoleSyncRun {
-  id           String            @id @default(cuid())
+  id           String                  @id @default(cuid())
   connectionId String
   status       SearchConsoleSyncStatus @default(RUNNING)
-  rangeStart   DateTime          @db.Date
-  rangeEnd     DateTime          @db.Date
-  rowsUpserted Int               @default(0)
-  errorMessage String?           @db.Text
-  startedAt    DateTime          @default(now())
+  rangeStart   DateTime                @db.Date
+  rangeEnd     DateTime                @db.Date
+  rowsUpserted Int                     @default(0)
+  errorMessage String?                 @db.Text
+  startedAt    DateTime                @default(now())
   completedAt  DateTime?
   connection   SearchConsoleConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
   @@index([connectionId, startedAt])
 }
 
 model SearchConsoleQueryMetric {
-  id           String   @id @default(cuid())
+  id           String                  @id @default(cuid())
   connectionId String
-  date         DateTime @db.Date
+  date         DateTime                @db.Date
   query        String
   clicks       Int
   impressions  Int
   ctr          Float
   position     Float
-  createdAt    DateTime @default(now())
+  createdAt    DateTime                @default(now())
   connection   SearchConsoleConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
   @@unique([connectionId, date, query])
   @@index([connectionId, date])
 }
 
 model SearchConsolePageMetric {
-  id           String   @id @default(cuid())
+  id           String                  @id @default(cuid())
   connectionId String
-  date         DateTime @db.Date
+  date         DateTime                @db.Date
   page         String
   clicks       Int
   impressions  Int
   ctr          Float
   position     Float
-  createdAt    DateTime @default(now())
+  createdAt    DateTime                @default(now())
   connection   SearchConsoleConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
   @@unique([connectionId, date, page])
   @@index([connectionId, date])
 }
 
 model SearchConsoleOpportunityMetric {
-  id           String   @id @default(cuid())
+  id           String                  @id @default(cuid())
   connectionId String
-  date         DateTime @db.Date
+  date         DateTime                @db.Date
   query        String
   page         String
   clicks       Int
   impressions  Int
   ctr          Float
   position     Float
-  createdAt    DateTime @default(now())
+  createdAt    DateTime                @default(now())
   connection   SearchConsoleConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
   @@unique([connectionId, date, query, page])
   @@index([connectionId, date])
 }
 
 model TrackedKeyword {
-  id         String   @id @default(cuid())
-  projectId  String
-  userId     String
-  query      String
-  targetPage String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id            String                @id @default(cuid())
+  projectId     String
+  userId        String
+  query         String
+  targetPage    String?
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+  project       Project               @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user          User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   rankSnapshots KeywordRankSnapshot[]
   serpTasks     KeywordSerpTask[]
+
   @@unique([projectId, userId, query])
   @@index([projectId, userId])
 }
 
 model KeywordRankSnapshot {
-  id               String   @id @default(cuid())
+  id               String         @id @default(cuid())
   trackedKeywordId String
-  checkDate        DateTime @db.Date
-  provider         String   @default("dataforseo")
+  checkDate        DateTime       @db.Date
+  provider         String         @default("dataforseo")
   device           String
   locationCode     Int
   rankAbsolute     Int?
   rankGroup        Int?
-  resultUrl        String?  @db.Text
+  resultUrl        String?        @db.Text
   serpFeatures     String[]
-  costUsd          Float    @default(0)
-  checkedAt        DateTime @default(now())
+  costUsd          Float          @default(0)
+  checkedAt        DateTime       @default(now())
   trackedKeyword   TrackedKeyword @relation(fields: [trackedKeywordId], references: [id], onDelete: Cascade)
+
   @@unique([trackedKeywordId, checkDate, device, locationCode])
   @@index([trackedKeywordId, checkedAt])
 }
 
 model KeywordSerpTask {
-  id               String   @id @default(cuid())
+  id               String         @id @default(cuid())
   trackedKeywordId String
-  externalTaskId   String   @unique
-  checkDate        DateTime @db.Date
+  externalTaskId   String         @unique
+  checkDate        DateTime       @db.Date
   device           String
   locationCode     Int
-  status           String   @default("PENDING")
-  costUsd          Float    @default(0)
-  errorMessage     String?  @db.Text
-  requestedAt      DateTime @default(now())
+  status           String         @default("PENDING")
+  costUsd          Float          @default(0)
+  errorMessage     String?        @db.Text
+  requestedAt      DateTime       @default(now())
   completedAt      DateTime?
   trackedKeyword   TrackedKeyword @relation(fields: [trackedKeywordId], references: [id], onDelete: Cascade)
+
   @@unique([trackedKeywordId, checkDate, device, locationCode])
   @@index([status, requestedAt])
 }
 
 model SearchConsoleOAuthState {
-  id              String   @id @default(cuid())
-  stateHash       String   @unique
-  codeVerifierEnc String   @db.Text
+  id              String    @id @default(cuid())
+  stateHash       String    @unique
+  codeVerifierEnc String    @db.Text
   projectId       String
   userId          String
   property        String
   expiresAt       DateTime
   consumedAt      DateTime?
-  createdAt       DateTime @default(now())
-  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt       DateTime  @default(now())
+  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId, expiresAt])
   @@index([projectId])
 }

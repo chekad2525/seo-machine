@@ -7,9 +7,9 @@ describe('exact rank configuration', () => {
     });
   });
 
-  it('requires all DataForSEO credentials and a location', () => {
+  it('requires DataForSEO credentials while location comes from the project', () => {
     expect(exactRankConfiguration({
-      SERP_PROVIDER: 'dataforseo', DATAFORSEO_LOGIN: 'user', DATAFORSEO_PASSWORD: 'pass', DATAFORSEO_LOCATION_CODE: '2036',
+      SERP_PROVIDER: 'dataforseo', DATAFORSEO_LOGIN: 'user', DATAFORSEO_PASSWORD: 'pass',
     }).configured).toBe(true);
     expect(exactRankConfiguration({ SERP_PROVIDER: 'dataforseo', DATAFORSEO_LOGIN: 'user' }).configured).toBe(false);
   });

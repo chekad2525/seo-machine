@@ -5,6 +5,7 @@ import { KeywordTrackingService } from '../keyword-tracking/keyword-tracking.ser
 jest.mock('@seo-machine/db', () => ({
   prisma: {
     project: { findFirst: jest.fn() },
+    keywordTrackingSetting: { upsert: jest.fn() },
     trackedKeyword: { findMany: jest.fn(), upsert: jest.fn() },
     $transaction: jest.fn(),
   },
@@ -45,5 +46,19 @@ describe('keyword spreadsheet import', () => {
     (prisma.trackedKeyword.findMany as jest.Mock).mockResolvedValue(Array.from({ length: 100 }, (_, index) => ({ query: `existing-${index}` })));
     await expect(service.bulkAdd('user', 'project', [{ query: 'new keyword' }])).rejects.toThrow('100-keyword');
     expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  it('saves normalized project-level tracking settings', async () => {
+    (prisma.keywordTrackingSetting.upsert as jest.Mock).mockResolvedValue({});
+    await expect(service.updateSettings('user', 'project', { countryCode: 'AE', languageCode: 'AR', locationName: ' Dubai ', device: 'desktop' })).resolves.toMatchObject({ settings: { countryCode: 'ae', languageCode: 'ar', locationName: 'Dubai', device: 'desktop' } });
+    expect(prisma.keywordTrackingSetting.upsert).toHaveBeenCalledWith(expect.objectContaining({ where: { projectId: 'project' } }));
+  });
+
+  it('builds the report without a Search Console dependency', async () => {
+    (prisma.trackedKeyword.findMany as jest.Mock).mockResolvedValue([]);
+    const report = await service.report('user', 'project');
+    expect(report).toMatchObject({ settings: { countryCode: 'ir', languageCode: 'fa', locationName: 'Iran', device: 'desktop' }, keywords: [] });
+    expect(report).not.toHaveProperty('gscConnected');
+    expect(report).not.toHaveProperty('suggestions');
   });
 });

@@ -46,12 +46,9 @@ export class KeywordRankSchedulerService implements OnModuleInit, OnModuleDestro
           catch { this.logger.warn(`Could not collect scheduled rank results for project ${project.projectId}.`); }
         }
       }
-      const now = new Date();
-      const checkDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
       const due = await prisma.trackedKeyword.findMany({
-        where: { rankSnapshots: { none: { checkDate } }, serpTasks: { none: { checkDate } } },
         select: { projectId: true, userId: true },
-        distinct: ['projectId', 'userId'], orderBy: { createdAt: 'asc' }, take: 10,
+        distinct: ['projectId', 'userId'], orderBy: { createdAt: 'asc' },
       });
       for (const project of due) {
         if (this.stopped) break;
