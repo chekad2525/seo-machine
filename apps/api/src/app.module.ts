@@ -22,9 +22,10 @@ import { SearchConsoleSchedulerService } from './search-console/search-console-s
 import { DataForSeoRankService } from './search-console/dataforseo-rank.service';
 import { SerperRankService } from './search-console/serper-rank.service';
 import { ExactRankService } from './search-console/exact-rank.service';
+import { KeywordRankSchedulerService } from './search-console/keyword-rank-scheduler.service';
 
 @Module({
   controllers: [HealthController, IdentityController, OnboardingController, OrganizationController, WorkspaceController, ProjectController, SearchConsoleController],
-  providers: [{ provide: APP_GUARD, useClass: InternalAuthGuard }, ApiAuthGuard, IdentityService, SmsService, OnboardingService, OrganizationService, WorkspaceService, ProjectService, SearchConsoleService, SearchConsoleSyncService, SearchConsoleTokenService, SearchConsoleSchedulerService, DataForSeoRankService, SerperRankService, ExactRankService],
+  providers: [{ provide: APP_GUARD, useClass: InternalAuthGuard }, ApiAuthGuard, IdentityService, SmsService, OnboardingService, OrganizationService, WorkspaceService, ProjectService, SearchConsoleService, SearchConsoleSyncService, SearchConsoleTokenService, SearchConsoleSchedulerService, DataForSeoRankService, SerperRankService, ExactRankService, KeywordRankSchedulerService],
 })
 export class AppModule {}

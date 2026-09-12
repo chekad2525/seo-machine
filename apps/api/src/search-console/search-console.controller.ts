@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Post, Query, Res, UseGuards } from '@nestjs/common';
 import type { Response } from 'express';
 import { Type } from 'class-transformer';
-import { IsDateString, IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import { ArrayMaxSize, ArrayMinSize, IsArray, IsDateString, IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min, ValidateNested } from 'class-validator';
 import { ApiAuthGuard } from '../shared/api-auth.guard';
 import { PublicApi } from '../shared/internal-auth.guard';
 import { CurrentUserId } from '../shared/current-user.decorator';
@@ -13,7 +13,15 @@ class PrepareSearchConsoleDto { @IsString() projectId!: string; @IsString() prop
 class SyncSearchConsoleDto { @IsString() projectId!: string; @IsOptional() @IsDateString() startDate?: string; @IsOptional() @IsDateString() endDate?: string; }
 class MetricsQueryDto { @IsString() projectId!: string; @IsOptional() @IsIn(['query', 'page']) dimension: 'query' | 'page' = 'query'; @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(1000) limit = 100; @IsOptional() @IsDateString() startDate?: string; @IsOptional() @IsDateString() endDate?: string; }
 class SummaryQueryDto { @IsString() projectId!: string; @IsOptional() @IsDateString() startDate?: string; @IsOptional() @IsDateString() endDate?: string; }
-class TrackKeywordDto { @IsString() projectId!: string; @IsIn(['add', 'remove', 'exact-refresh', 'exact-collect']) action!: 'add' | 'remove' | 'exact-refresh' | 'exact-collect'; @IsOptional() @IsString() @MaxLength(250) query?: string; @IsOptional() @IsString() @MaxLength(2000) targetPage?: string; @IsOptional() @IsString() id?: string; }
+class ImportedKeywordDto { @IsString() @MaxLength(250) query!: string; @IsOptional() @IsString() @MaxLength(2000) targetPage?: string; }
+class TrackKeywordDto {
+  @IsString() projectId!: string;
+  @IsIn(['add', 'remove', 'bulk-import', 'exact-refresh', 'exact-collect']) action!: 'add' | 'remove' | 'bulk-import' | 'exact-refresh' | 'exact-collect';
+  @IsOptional() @IsString() @MaxLength(250) query?: string;
+  @IsOptional() @IsString() @MaxLength(2000) targetPage?: string;
+  @IsOptional() @IsString() id?: string;
+  @IsOptional() @IsArray() @ArrayMinSize(1) @ArrayMaxSize(100) @ValidateNested({ each: true }) @Type(() => ImportedKeywordDto) keywords?: ImportedKeywordDto[];
+}
 
 @Controller('integrations/google-search-console')
 export class SearchConsoleController {
@@ -35,6 +43,7 @@ export class SearchConsoleController {
   @UseGuards(ApiAuthGuard)
   @Post('keyword-tracking') trackKeyword(@CurrentUserId() userId: string, @Body() dto: TrackKeywordDto) {
     if (dto.action === 'add') return this.syncService.addTrackedKeyword(userId, dto.projectId, dto.query ?? '', dto.targetPage);
+    if (dto.action === 'bulk-import') return this.syncService.bulkAddTrackedKeywords(userId, dto.projectId, dto.keywords ?? []);
     if (dto.action === 'remove') return this.syncService.removeTrackedKeyword(userId, dto.projectId, dto.id ?? '');
     if (dto.action === 'exact-collect') return this.rankService.collect(userId, dto.projectId);
     return this.rankService.enqueue(userId, dto.projectId);

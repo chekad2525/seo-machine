@@ -5,6 +5,7 @@ import { SearchConsoleTokenService } from './search-console-token.service';
 import { aggregateAnalytics, percentChange } from './search-console-analytics';
 import { buildSearchConsoleInsights } from './search-console-insights';
 import { buildKeywordSuggestions, buildKeywordTracking } from './keyword-tracking';
+import { exactRankConfiguration } from './exact-rank.service';
 
 const SEARCH_ANALYTICS_LIMIT = 25_000;
 const MAX_SYNC_DAYS = 31;
@@ -170,23 +171,24 @@ export class SearchConsoleSyncService {
   }
 
   async keywordTracking(userId: string, projectId: string) {
-    const connection = await prisma.searchConsoleConnection.findFirst({
-      where: { projectId, userId, project: { workspace: { organization: { memberships: { some: { userId } } } } } },
+    const project = await prisma.project.findFirst({
+      where: { id: projectId, workspace: { organization: { memberships: { some: { userId } } } } },
       select: { id: true },
     });
-    if (!connection) throw new NotFoundException('Project or Search Console connection not found.');
+    if (!project) throw new NotFoundException('Project not found.');
+    const connection = await prisma.searchConsoleConnection.findFirst({ where: { projectId, userId }, select: { id: true } });
     const range = this.validRange();
     const [tracked, metrics] = await Promise.all([
       prisma.trackedKeyword.findMany({
         where: { projectId, userId },
         select: {
           id: true, query: true, targetPage: true, createdAt: true,
-          rankSnapshots: { select: { provider: true, rankAbsolute: true, rankGroup: true, resultUrl: true, checkedAt: true, device: true, locationCode: true }, orderBy: { checkedAt: 'desc' }, take: 2 },
+          rankSnapshots: { select: { provider: true, rankAbsolute: true, rankGroup: true, resultUrl: true, checkedAt: true, checkDate: true, device: true, locationCode: true }, orderBy: { checkedAt: 'desc' }, take: 30 },
           serpTasks: { select: { status: true, errorMessage: true, requestedAt: true }, orderBy: { requestedAt: 'desc' }, take: 1 },
         },
         orderBy: { createdAt: 'asc' },
       }),
-      prisma.searchConsoleQueryMetric.findMany({ where: { connectionId: connection.id, date: { gte: range.startDate, lte: range.endDate } }, select: { date: true, query: true, clicks: true, impressions: true, position: true } }),
+      connection ? prisma.searchConsoleQueryMetric.findMany({ where: { connectionId: connection.id, date: { gte: range.startDate, lte: range.endDate } }, select: { date: true, query: true, clicks: true, impressions: true, position: true } }) : Promise.resolve([]),
     ]);
     const keywordRows = buildKeywordTracking(tracked.map(({ rankSnapshots: _rankSnapshots, serpTasks: _serpTasks, ...item }) => item), metrics).map((item) => {
       const source = tracked.find((trackedItem) => trackedItem.id === item.id)!;
@@ -203,6 +205,7 @@ export class SearchConsoleSyncService {
           device: latest.device,
           locationCode: latest.locationCode,
         } : null,
+        exactHistory: [...source.rankSnapshots].reverse().map((snapshot) => ({ date: formatDate(snapshot.checkDate), rank: snapshot.rankAbsolute })),
         exactStatus: process.env.SERP_PROVIDER?.trim().toLowerCase() === 'dataforseo'
           ? source.serpTasks[0]?.status ?? null
           : latest?.provider === 'serper' ? 'COMPLETED' : null,
@@ -211,11 +214,14 @@ export class SearchConsoleSyncService {
           : null,
       };
     });
-    const exactProvider = process.env.SERP_PROVIDER?.trim().toLowerCase() === 'dataforseo' ? 'DataForSEO' : 'Serper';
+    const exactConfig = exactRankConfiguration();
+    const exactProvider = exactConfig.provider === 'dataforseo' ? 'DataForSEO' : 'Serper';
     return {
       range: { startDate: formatDate(range.startDate), endDate: formatDate(range.endDate) },
-      freshnessNote: 'داده‌های Search Console نهایی هستند و معمولاً ۲ تا ۳ روز تأخیر دارند.',
+      gscConnected: Boolean(connection),
+      freshnessNote: connection ? 'داده‌های Search Console نهایی هستند و معمولاً ۲ تا ۳ روز تأخیر دارند.' : 'Search Console متصل نیست؛ گزارش رتبه دقیق مستقل از آن قابل استفاده است.',
       exactRankNote: `رتبه دقیق دسکتاپ با ${exactProvider} و موقعیت جغرافیایی تنظیم‌شده بررسی می‌شود.`,
+      exactRankReady: exactConfig.configured,
       keywords: keywordRows,
       suggestions: buildKeywordSuggestions(metrics, new Set(tracked.map((item) => item.query))),
     };
@@ -226,13 +232,49 @@ export class SearchConsoleSyncService {
     if (!project) throw new NotFoundException('Project not found.');
     const normalized = query.trim().replace(/\s+/g, ' ');
     if (!normalized) throw new BadRequestException('Keyword is required.');
+    const normalizedTarget = this.validateTargetPage(targetPage);
     const count = await prisma.trackedKeyword.count({ where: { projectId, userId } });
     if (count >= 100) throw new BadRequestException('A project can track up to 100 keywords.');
     return prisma.trackedKeyword.upsert({
       where: { projectId_userId_query: { projectId, userId, query: normalized } },
-      create: { projectId, userId, query: normalized, targetPage: targetPage?.trim() || null },
-      update: { targetPage: targetPage?.trim() || null },
+      create: { projectId, userId, query: normalized, targetPage: normalizedTarget },
+      update: { targetPage: normalizedTarget },
     });
+  }
+
+  async bulkAddTrackedKeywords(userId: string, projectId: string, items: Array<{ query: string; targetPage?: string }>) {
+    const project = await prisma.project.findFirst({ where: { id: projectId, workspace: { organization: { memberships: { some: { userId } } } } }, select: { id: true } });
+    if (!project) throw new NotFoundException('Project not found.');
+    const unique = new Map<string, { query: string; targetPage: string | null }>();
+    for (const item of items) {
+      const query = item.query.trim().replace(/\s+/g, ' ');
+      if (!query) continue;
+      unique.set(query.toLocaleLowerCase('fa'), { query, targetPage: this.validateTargetPage(item.targetPage) });
+    }
+    const keywords = [...unique.values()];
+    if (!keywords.length) throw new BadRequestException('The spreadsheet does not contain a keyword.');
+    const existing = await prisma.trackedKeyword.findMany({ where: { projectId, userId }, select: { query: true } });
+    const existingQueries = new Map(existing.map((item) => [item.query.toLocaleLowerCase('fa'), item.query]));
+    const imported = keywords.filter((item) => !existingQueries.has(item.query.toLocaleLowerCase('fa'))).length;
+    if (existing.length + imported > 100) throw new BadRequestException(`This import exceeds the 100-keyword project limit. You can add ${Math.max(0, 100 - existing.length)} more.`);
+    await prisma.$transaction(keywords.map((item) => prisma.trackedKeyword.upsert({
+      where: { projectId_userId_query: { projectId, userId, query: existingQueries.get(item.query.toLocaleLowerCase('fa')) ?? item.query } },
+      create: { projectId, userId, query: item.query, targetPage: item.targetPage },
+      update: item.targetPage ? { targetPage: item.targetPage } : {},
+    })));
+    return { imported, updated: keywords.length - imported, total: existing.length + imported };
+  }
+
+  private validateTargetPage(targetPage?: string) {
+    const value = targetPage?.trim();
+    if (!value) return null;
+    try {
+      const url = new URL(value);
+      if (url.protocol !== 'http:' && url.protocol !== 'https:') throw new Error('protocol');
+      return url.toString();
+    } catch {
+      throw new BadRequestException('Target pages must be absolute HTTP or HTTPS URLs.');
+    }
   }
 
   async removeTrackedKeyword(userId: string, projectId: string, id: string) {

@@ -27,6 +27,8 @@ npm run dev
 
 Open `http://localhost:3000`. The API health check is at `http://localhost:3001/api/v1/health`.
 
+The root commands `npm run dev`, `npm test`, and `npm run typecheck` automatically generate Prisma Client and build the shared database package before starting. Run `npm run db:prepare` to perform just this preparation; it does not apply migrations or connect to the database. Database integration tests require a migrated PostgreSQL database and `RUN_DATABASE_TESTS=true`.
+
 For local phone OTP tests, set `SMS_DEV_MODE=true`; the NestJS API response includes a `devCode`. In production, set `SMS_DEV_MODE=false`, `KAVENEGAR_API_KEY`, and `KAVENEGAR_VERIFY_TEMPLATE` to use the Kavenegar VerifyLookup adapter. Requests are rate-limited to one code per minute and failed delivery invalidates the stored OTP.
 
 ## API surface
@@ -48,6 +50,7 @@ All non-public API routes require a short-lived request signature from the Next.
 | GET | `/api/v1/integrations/google-search-console/metrics` | Read stored query or page metrics |
 | GET | `/api/v1/integrations/google-search-console/summary` | Read weighted KPIs, daily trend, and period comparison |
 | GET | `/api/v1/integrations/google-search-console/sync/latest` | Read the latest sync run |
+| GET/POST | `/api/v1/integrations/google-search-console/keyword-tracking` | Import, manage, and report stored keyword ranks |
 
 ## Google Search Console next step
 
@@ -56,3 +59,5 @@ v0.4.0 prepares and completes the read-only OAuth flow with state + PKCE, verifi
 The Search Data Pipeline requests a rolling 28-day window ending two days before today with `dataState=final`. This delay is a conservative default, not a guarantee of complete Google coverage. A requested range may be between 1 and 31 days. Sync runs are recorded as `RUNNING`, `COMPLETED`, or `FAILED`. Atomic window replacement keeps retries idempotent and removes stale rows. The API fetches up to 25,000 rows per page and stores query and page dimensions separately.
 
 Set `GSC_SYNC_ENABLED=true` on a long-running API worker to enable scheduled sync. Access tokens refresh automatically; revoked authorization requires reconnection. See [scheduling, testing, and deployment constraints](docs/gsc-scheduling.md). Public deployment remains blocked by dependency advisories and outstanding production validation documented in [API authentication](docs/internal-api-auth.md).
+
+The keyword tracker accepts `.xlsx` files with a `keyword` column and an optional `target_url` column (or treats the first column as keywords when there is no header). Configure `SERPER_API_KEY`, or the DataForSEO credentials, for live Google rank checks. Set `SERP_SYNC_ENABLED=true` on a long-running API worker to enqueue one rank check per keyword per UTC day; stored snapshots power the rank history and movement report.
