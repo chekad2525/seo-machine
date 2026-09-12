@@ -1,4 +1,4 @@
-import { CanActivate, ExecutionContext, Injectable, OnModuleInit, RawBodyRequest, ServiceUnavailableException, SetMetadata, UnauthorizedException } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable, Logger, OnModuleInit, RawBodyRequest, ServiceUnavailableException, SetMetadata, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
 import { internalApiSecret, prisma, verifyInternalRequest } from '@seo-machine/db';
@@ -11,6 +11,8 @@ export type VerifiedRequest = RawBodyRequest<Request> & { internalIdentity?: { s
 
 @Injectable()
 export class InternalAuthGuard implements CanActivate, OnModuleInit {
+  private readonly logger = new Logger(InternalAuthGuard.name);
+
   constructor(private readonly reflector: Reflector) {}
   onModuleInit() { internalApiSecret(); }
 
@@ -37,6 +39,10 @@ export class InternalAuthGuard implements CanActivate, OnModuleInit {
     } catch (error) {
       if (error instanceof UnauthorizedException) throw error;
       if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') throw new UnauthorizedException('Internal request was already used.');
+      const details = error instanceof Error
+        ? `${error.name}: ${error.message}`
+        : String(error);
+      this.logger.error(`Internal authentication database check failed: ${details}`);
       throw new ServiceUnavailableException('Internal authentication is temporarily unavailable.');
     }
     request.internalIdentity = { scope: identity.scope, userId: identity.userId };

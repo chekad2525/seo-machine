@@ -3,6 +3,7 @@ import { auth } from '../../auth';
 import { internalApiFetch } from '../../lib/internal-api';
 import Brand from '../components/brand';
 import SearchPerformance, { type SearchPerformanceSummary } from '../dashboard/search-performance';
+import AppHeader from '../components/app-header';
 
 type Metric = { label: string; clicks: number; impressions: number; ctr: number; position: number };
 type SelectedOpportunity = Omit<Metric, 'label'> & { query: string; page: string; score: number; reason: 'low-ctr' | 'striking-distance' };
@@ -73,7 +74,7 @@ export default async function AnalyticsPage() {
 
   return <main className="dashboard-shell app-dashboard analysis-page" dir="rtl">
     <a className="skip-link" href="#analysis-content">پرش به محتوای تحلیل</a>
-    <header className="app-product-header"><Brand/><nav className="dashboard-links" aria-label="ناوبری اصلی"><Link href="/dashboard">نمای کلی</Link><Link className="active" href="/analytics">تحلیل‌ها</Link><Link href="/dashboard#connection">اتصال‌ها</Link></nav><div className="app-user-chip"><span>{(session.user.name ?? session.user.email ?? 'ک').slice(0, 1)}</span><div><small>حساب فعال</small><b>{session.user.email ?? session.user.name}</b></div></div></header>
+    <AppHeader active="analytics" identity={session.user.email ?? session.user.name} connected={Boolean(project)}/>
     <div className="formal-dashboard" id="analysis-content">
       <div className="analysis-hero"><div><p className="app-overline">مرکز تحلیل Search Console</p><h1>فرصت‌ها را از دل داده پیدا کنید.</h1><p>رتبه، نمایش و نرخ کلیک را به اقدام‌های قابل‌اندازه‌گیری تبدیل کنید.</p></div><div className="analysis-freshness"><span>آخرین همگام‌سازی</span><strong>{latest?.completedAt ? new Date(latest.completedAt).toLocaleString('fa-IR') : 'نامشخص'}</strong><small>{latest?.rowsUpserted ? `${faNumber.format(latest.rowsUpserted)} ردیف پردازش شده` : 'داده همگام‌سازی نشده است'}</small></div></div>
 

@@ -119,13 +119,10 @@ export class SearchConsoleService {
     }
     const verifiedProperty = matchAccessibleProperty(pending.property, sites.siteEntry ?? []);
     if (!verifiedProperty) { await this.markError(pending); throw new BadRequestException('No matching Search Console property was found for this Google account. Verify the site or add the account as an owner, then try again.'); }
-const existing = await prisma.searchConsoleConnection.findFirst({
-  where: {
-    projectId: pending.projectId,
-    userId: pending.userId,
-    property: pending.property,
-  },
-});    if (!existing) throw new UnauthorizedException('The pending Search Console connection is no longer available.');
+    const existing = await prisma.searchConsoleConnection.findFirst({
+      where: { projectId: pending.projectId, userId: pending.userId, property: pending.property },
+    });
+    if (!existing) throw new UnauthorizedException('The pending Search Console connection is no longer available.');
     const connection = await prisma.$transaction(async (tx) => {
       const member = await tx.project.findFirst({ where: { id: pending.projectId, workspace: { organization: { memberships: { some: { userId: pending.userId } } } } } });
       if (!member) throw new UnauthorizedException('Project access was removed.');

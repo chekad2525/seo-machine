@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function SyncSearchConsole({ projectId, connected }: { projectId: string; connected: boolean }) {
+  const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -16,6 +18,7 @@ export default function SyncSearchConsole({ projectId, connected }: { projectId:
       const data = await response.json() as { message?: string; queryRows?: number; pageRows?: number };
       if (!response.ok) throw new Error(data.message ?? 'دریافت داده‌های Search Console انجام نشد.');
       setMessage(`${data.queryRows ?? 0} عبارت و ${data.pageRows ?? 0} صفحه با موفقیت دریافت شد.`);
+      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'دریافت داده‌های Search Console انجام نشد.');
     } finally {

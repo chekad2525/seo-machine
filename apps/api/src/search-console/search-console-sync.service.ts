@@ -4,6 +4,7 @@ import { randomUUID } from 'crypto';
 import { SearchConsoleTokenService } from './search-console-token.service';
 import { aggregateAnalytics, percentChange } from './search-console-analytics';
 import { buildSearchConsoleInsights } from './search-console-insights';
+import { buildKeywordSuggestions, buildKeywordTracking } from './keyword-tracking';
 
 const SEARCH_ANALYTICS_LIMIT = 25_000;
 const MAX_SYNC_DAYS = 31;
@@ -166,6 +167,78 @@ export class SearchConsoleSyncService {
       range: { startDate: formatDate(range.startDate), endDate: formatDate(range.endDate) },
       ...buildSearchConsoleInsights(queryRows, pageRows, opportunityRows),
     };
+  }
+
+  async keywordTracking(userId: string, projectId: string) {
+    const connection = await prisma.searchConsoleConnection.findFirst({
+      where: { projectId, userId, project: { workspace: { organization: { memberships: { some: { userId } } } } } },
+      select: { id: true },
+    });
+    if (!connection) throw new NotFoundException('Project or Search Console connection not found.');
+    const range = this.validRange();
+    const [tracked, metrics] = await Promise.all([
+      prisma.trackedKeyword.findMany({
+        where: { projectId, userId },
+        select: {
+          id: true, query: true, targetPage: true, createdAt: true,
+          rankSnapshots: { select: { provider: true, rankAbsolute: true, rankGroup: true, resultUrl: true, checkedAt: true, device: true, locationCode: true }, orderBy: { checkedAt: 'desc' }, take: 2 },
+          serpTasks: { select: { status: true, errorMessage: true, requestedAt: true }, orderBy: { requestedAt: 'desc' }, take: 1 },
+        },
+        orderBy: { createdAt: 'asc' },
+      }),
+      prisma.searchConsoleQueryMetric.findMany({ where: { connectionId: connection.id, date: { gte: range.startDate, lte: range.endDate } }, select: { date: true, query: true, clicks: true, impressions: true, position: true } }),
+    ]);
+    const keywordRows = buildKeywordTracking(tracked.map(({ rankSnapshots: _rankSnapshots, serpTasks: _serpTasks, ...item }) => item), metrics).map((item) => {
+      const source = tracked.find((trackedItem) => trackedItem.id === item.id)!;
+      const [latest, previous] = source.rankSnapshots;
+      return {
+        ...item,
+        exact: latest ? {
+          rank: latest.rankAbsolute,
+          groupRank: latest.rankGroup,
+          provider: latest.provider,
+          change: latest.rankAbsolute !== null && previous?.rankAbsolute !== null && previous?.rankAbsolute !== undefined ? latest.rankAbsolute - previous.rankAbsolute : null,
+          resultUrl: latest.resultUrl,
+          checkedAt: latest.checkedAt.toISOString(),
+          device: latest.device,
+          locationCode: latest.locationCode,
+        } : null,
+        exactStatus: process.env.SERP_PROVIDER?.trim().toLowerCase() === 'dataforseo'
+          ? source.serpTasks[0]?.status ?? null
+          : latest?.provider === 'serper' ? 'COMPLETED' : null,
+        exactError: process.env.SERP_PROVIDER?.trim().toLowerCase() === 'dataforseo'
+          ? source.serpTasks[0]?.errorMessage ?? null
+          : null,
+      };
+    });
+    const exactProvider = process.env.SERP_PROVIDER?.trim().toLowerCase() === 'dataforseo' ? 'DataForSEO' : 'Serper';
+    return {
+      range: { startDate: formatDate(range.startDate), endDate: formatDate(range.endDate) },
+      freshnessNote: 'داده‌های Search Console نهایی هستند و معمولاً ۲ تا ۳ روز تأخیر دارند.',
+      exactRankNote: `رتبه دقیق دسکتاپ با ${exactProvider} و موقعیت جغرافیایی تنظیم‌شده بررسی می‌شود.`,
+      keywords: keywordRows,
+      suggestions: buildKeywordSuggestions(metrics, new Set(tracked.map((item) => item.query))),
+    };
+  }
+
+  async addTrackedKeyword(userId: string, projectId: string, query: string, targetPage?: string) {
+    const project = await prisma.project.findFirst({ where: { id: projectId, workspace: { organization: { memberships: { some: { userId } } } } }, select: { id: true } });
+    if (!project) throw new NotFoundException('Project not found.');
+    const normalized = query.trim().replace(/\s+/g, ' ');
+    if (!normalized) throw new BadRequestException('Keyword is required.');
+    const count = await prisma.trackedKeyword.count({ where: { projectId, userId } });
+    if (count >= 100) throw new BadRequestException('A project can track up to 100 keywords.');
+    return prisma.trackedKeyword.upsert({
+      where: { projectId_userId_query: { projectId, userId, query: normalized } },
+      create: { projectId, userId, query: normalized, targetPage: targetPage?.trim() || null },
+      update: { targetPage: targetPage?.trim() || null },
+    });
+  }
+
+  async removeTrackedKeyword(userId: string, projectId: string, id: string) {
+    const result = await prisma.trackedKeyword.deleteMany({ where: { id, projectId, userId } });
+    if (!result.count) throw new NotFoundException('Tracked keyword not found.');
+    return { removed: true };
   }
 
   private async fetchRows(connectionId: string, property: string, leaseId: string, range: DateRange, dimension: 'query'): Promise<QueryMetricRow[]>;

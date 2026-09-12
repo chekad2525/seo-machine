@@ -8,10 +8,7 @@ export default function ConnectSearchConsole({ projectId, property }: { projectI
   async function connect() {
     setBusy(true); setError('');
     try {
-      const urlPrefixProperty = property.startsWith('http://') || property.startsWith('https://')
-        ? `${property.replace(/\/+$/, '')}/`
-        : `https://${property.replace(/\/+$/, '')}/`;
-      const response = await fetch('/api/gsc/prepare', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ projectId, property: urlPrefixProperty }) });
+      const response = await fetch('/api/gsc/prepare', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ projectId, property: property.trim() }) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message ?? 'اتصال Search Console هنوز تنظیم نشده است.');
       window.location.assign(data.authorizationUrl);
