@@ -50,7 +50,7 @@ All non-public API routes require a short-lived request signature from the Next.
 | GET | `/api/v1/integrations/google-search-console/metrics` | Read stored query or page metrics |
 | GET | `/api/v1/integrations/google-search-console/summary` | Read weighted KPIs, daily trend, and period comparison |
 | GET | `/api/v1/integrations/google-search-console/sync/latest` | Read the latest sync run |
-| GET/POST | `/api/v1/integrations/google-search-console/keyword-tracking` | Import, manage, and report stored keyword ranks |
+| GET/POST | `/api/v1/keyword-tracking` | Import, manage, and report live keyword ranks independently of Search Console |
 
 ## Google Search Console next step
 
@@ -60,4 +60,4 @@ The Search Data Pipeline requests a rolling 28-day window ending two days before
 
 Set `GSC_SYNC_ENABLED=true` on a long-running API worker to enable scheduled sync. Access tokens refresh automatically; revoked authorization requires reconnection. See [scheduling, testing, and deployment constraints](docs/gsc-scheduling.md). Public deployment remains blocked by dependency advisories and outstanding production validation documented in [API authentication](docs/internal-api-auth.md).
 
-The keyword tracker accepts `.xlsx` files with a `keyword` column and an optional `target_url` column (or treats the first column as keywords when there is no header). Configure `SERPER_API_KEY`, or the DataForSEO credentials, for live Google rank checks. Set `SERP_SYNC_ENABLED=true` on a long-running API worker to enqueue one rank check per keyword per UTC day; stored snapshots power the rank history and movement report.
+The keyword tracker accepts `.xlsx` files with a `keyword` column and an optional `target_url` column (or treats the first column as keywords when there is no header). Configure `SERPER_API_KEY`, or the DataForSEO credentials, for live Google rank checks. On a long-running API worker, `SERP_SYNC_ENABLED=true` scans due keywords throughout the day. On Vercel, keep it false and configure `CRON_SECRET`; the daily cron in `apps/api/vercel.json` triggers rank collection at 03:00 UTC. Stored snapshots power the rank history and movement report.

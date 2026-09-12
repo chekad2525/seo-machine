@@ -51,7 +51,7 @@ export class SerperRankService {
     const language = process.env.SERPER_LANGUAGE?.trim().toLowerCase() || 'fa';
     const location = process.env.SERPER_LOCATION?.trim() || '';
     const resultCount = Math.min(Math.max(Number(process.env.SERPER_RESULT_COUNT ?? 100), 10), 100);
-    const maxKeywords = Math.min(Math.max(Number(process.env.SERPER_MAX_KEYWORDS_PER_RUN ?? 25), 1), 100);
+    const maxKeywords = Math.min(Math.max(Number(process.env.SERPER_MAX_KEYWORDS_PER_RUN ?? 100), 1), 100);
     if (!apiKey) throw new ServiceUnavailableException('Serper is not configured. Add SERPER_API_KEY to the API environment variables.');
     if (!/^[a-z]{2}$/.test(country) || !/^[a-z]{2}$/.test(language)) throw new ServiceUnavailableException('Serper country or language code is invalid.');
     if (!Number.isInteger(resultCount) || !Number.isInteger(maxKeywords)) throw new ServiceUnavailableException('Serper numeric settings are invalid.');

@@ -8,7 +8,7 @@ export async function POST(request: Request) {
   if (!userId) return Response.json({ message: 'ابتدا وارد حساب شوید.' }, { status: 401 });
   try {
     const body = await request.text();
-    const response = await internalApiFetch('/api/v1/integrations/google-search-console/keyword-tracking', { method: 'POST', userId, body });
+    const response = await internalApiFetch('/api/v1/keyword-tracking', { method: 'POST', userId, body });
     const text = await response.text();
     return new Response(text || JSON.stringify({ message: response.ok ? 'انجام شد.' : 'درخواست انجام نشد.' }), { status: response.status, headers: { 'content-type': 'application/json' } });
   } catch (error) {

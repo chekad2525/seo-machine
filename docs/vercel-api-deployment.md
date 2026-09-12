@@ -19,9 +19,10 @@ and set `INTERNAL_API_SECRET`, `OTP_HASH_SECRET`, `TOKEN_ENCRYPTION_KEY`,
 The redirect URI must use the deployed API domain and match the Google OAuth client.
 APP_ORIGIN and CORS_ORIGIN must use the deployed web domain.
 
-Keep `GSC_SYNC_ENABLED=false` on Vercel: the current interval scheduler requires a
-persistent process. Manual sync can be tested within function duration limits;
-scheduled ingestion needs a separate cron/worker integration.
+Keep `GSC_SYNC_ENABLED=false` and `SERP_SYNC_ENABLED=false` on Vercel because interval
+schedulers require a persistent process. Keyword ranks use the daily Vercel Cron entry
+in `apps/api/vercel.json`; set `CRON_SECRET` so Vercel can authenticate that request.
+Manual Search Console sync can still be tested within function duration limits.
 
 Check `/api/v1/health` after deployment, then test authenticated application requests
 and the Google connection. Do not run database migrations automatically in preview builds.

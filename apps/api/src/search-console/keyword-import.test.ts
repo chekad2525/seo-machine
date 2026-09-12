@@ -1,7 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import { prisma } from '@seo-machine/db';
-import { SearchConsoleSyncService } from './search-console-sync.service';
-import { SearchConsoleTokenService } from './search-console-token.service';
+import { KeywordTrackingService } from '../keyword-tracking/keyword-tracking.service';
 
 jest.mock('@seo-machine/db', () => ({
   prisma: {
@@ -12,7 +11,7 @@ jest.mock('@seo-machine/db', () => ({
 }));
 
 describe('keyword spreadsheet import', () => {
-  const service = new SearchConsoleSyncService({} as SearchConsoleTokenService);
+  const service = new KeywordTrackingService();
 
   beforeEach(() => {
     jest.resetAllMocks();
@@ -23,7 +22,7 @@ describe('keyword spreadsheet import', () => {
   });
 
   it('deduplicates normalized keywords and stores an optional target page', async () => {
-    const result = await service.bulkAddTrackedKeywords('user', 'project', [
+    const result = await service.bulkAdd('user', 'project', [
       { query: '  آموزش   سئو  ' },
       { query: 'آموزش سئو', targetPage: 'https://example.com/seo' },
     ]);
@@ -36,7 +35,7 @@ describe('keyword spreadsheet import', () => {
   });
 
   it('rejects non-http target pages', async () => {
-    await expect(service.bulkAddTrackedKeywords('user', 'project', [
+    await expect(service.bulkAdd('user', 'project', [
       { query: 'seo', targetPage: 'javascript:alert(1)' },
     ])).rejects.toBeInstanceOf(BadRequestException);
     expect(prisma.$transaction).not.toHaveBeenCalled();
@@ -44,7 +43,7 @@ describe('keyword spreadsheet import', () => {
 
   it('rejects imports that exceed the project limit', async () => {
     (prisma.trackedKeyword.findMany as jest.Mock).mockResolvedValue(Array.from({ length: 100 }, (_, index) => ({ query: `existing-${index}` })));
-    await expect(service.bulkAddTrackedKeywords('user', 'project', [{ query: 'new keyword' }])).rejects.toThrow('100-keyword');
+    await expect(service.bulkAdd('user', 'project', [{ query: 'new keyword' }])).rejects.toThrow('100-keyword');
     expect(prisma.$transaction).not.toHaveBeenCalled();
   });
 });
