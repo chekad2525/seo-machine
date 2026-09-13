@@ -47,8 +47,10 @@ describe('project settings in rank providers', () => {
     (prisma.keywordSerpTask.findMany as jest.Mock).mockResolvedValue([]);
     (prisma.trackedKeyword.findMany as jest.Mock).mockResolvedValue([{ id: 'keyword', query: 'seo' }]);
     global.fetch = jest.fn()
-      .mockResolvedValueOnce(new Response(JSON.stringify({ status_code: 20000, tasks: [{ status_code: 20000, result: [{ location_code: 2036, location_name: 'Iran', country_iso_code: 'IR', location_type: 'Country' }] }] }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ status_code: 20000, tasks: [{ status_code: 20000, result: [] }] }), { status: 200 }))
       .mockResolvedValueOnce(new Response(JSON.stringify({ status_code: 20000, tasks: [{ status_code: 40201, status_message: 'Account verification required' }] }), { status: 200 }));
     await expect(new DataForSeoRankService().enqueue('user', 'project')).rejects.toThrow('Account verification required');
+    const request = (global.fetch as jest.Mock).mock.calls.find((call) => String(call[0]).includes('task_post'));
+    expect(JSON.parse(request[1].body)[0]).toMatchObject({ location_coordinate: '32.4279,53.6880,5z', language_code: 'fa' });
   });
 });

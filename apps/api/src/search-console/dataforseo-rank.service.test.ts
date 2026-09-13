@@ -1,4 +1,4 @@
-import { findDomainRank, selectDataForSeoLocation } from './dataforseo-rank.service';
+import { fallbackDataForSeoCoordinates, findDomainRank, selectDataForSeoLocation } from './dataforseo-rank.service';
 
 describe('DataForSEO rank parsing', () => {
   it('finds the first matching organic result across www variants', () => {
@@ -22,5 +22,11 @@ describe('DataForSEO location resolution', () => {
 
   it('falls back to the country location when a city is unavailable', () => {
     expect(selectDataForSeoLocation(locations, 'Unknown city, Iran', 'ir')?.location_code).toBe(2036);
+  });
+
+  it('uses real Iranian coordinates when Google does not provide an Iran location code', () => {
+    expect(fallbackDataForSeoCoordinates('Tehran, Iran', 'ir')).toBe('35.6892,51.3890,12z');
+    expect(fallbackDataForSeoCoordinates('Iran', 'ir')).toBe('32.4279,53.6880,5z');
+    expect(fallbackDataForSeoCoordinates('Iran', 'ae')).toBeNull();
   });
 });
