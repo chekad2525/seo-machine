@@ -7,8 +7,9 @@ if (process.env.VERCEL_ENV !== 'production') {
   process.exit(0);
 }
 
-if (!process.env.DATABASE_URL?.trim()) {
-  console.error('[database] DATABASE_URL is required for the production migration.');
+const migrationDatabaseUrl = process.env.DIRECT_URL?.trim() || process.env.DATABASE_URL?.trim();
+if (!migrationDatabaseUrl) {
+  console.error('[database] DIRECT_URL or DATABASE_URL is required for the production migration.');
   process.exit(1);
 }
 
@@ -17,7 +18,7 @@ const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 console.log('[database] Applying pending Prisma migrations to Production.');
 const migration = spawnSync(npmCommand, ['run', 'db:migrate'], {
   cwd: repositoryRoot,
-  env: process.env,
+  env: { ...process.env, DATABASE_URL: migrationDatabaseUrl },
   stdio: 'inherit',
 });
 

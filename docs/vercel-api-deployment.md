@@ -26,7 +26,10 @@ Manual Search Console sync can still be tested within function duration limits.
 The API prebuild runs `prisma migrate deploy` only when Vercel exposes
 `VERCEL_ENV=production`. Local, Development, and Preview builds skip database
 migrations. A failed production migration stops the deployment instead of serving code
-that expects tables which do not exist.
+that expects tables which do not exist. If `DIRECT_URL` exists, the migration process
+uses it while the deployed application continues to use `DATABASE_URL`. For Supabase,
+keep the transaction pooler URL on port `6543` in `DATABASE_URL` and use the Direct
+connection or shared Session Pooler URL on port `5432` in `DIRECT_URL`.
 
 For keyword tracking with Serper, set `SERP_PROVIDER=serper` and `SERPER_API_KEY`.
 For DataForSEO, set `SERP_PROVIDER=dataforseo`, `DATAFORSEO_LOGIN`, and
