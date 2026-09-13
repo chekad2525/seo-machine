@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "nest start --watch",
-    "prebuild": "npm --prefix ../.. run db:generate && npm --prefix ../.. run build -w @seo-machine/db",
+    "prebuild": "node ../../scripts/migrate-vercel-production.mjs && npm --prefix ../.. run db:generate && npm --prefix ../.. run build -w @seo-machine/db",
     "build": "nest build --path tsconfig.build.json",
     "start": "node dist/main.js",
     "test": "jest --runInBand",

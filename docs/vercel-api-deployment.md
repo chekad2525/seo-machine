@@ -13,8 +13,7 @@ Push the updated files to GitHub before redeploying. Redeploy the new commit,
 not the old failing deployment. Do not upload `.env` or client-secret JSON files.
 
 Build success does not establish runtime readiness. Configure an online PostgreSQL
-`DATABASE_URL`, apply migrations separately (`npm run db:migrate` at repository root),
-and set `INTERNAL_API_SECRET`, `OTP_HASH_SECRET`, `TOKEN_ENCRYPTION_KEY`,
+`DATABASE_URL` and set `INTERNAL_API_SECRET`, `OTP_HASH_SECRET`, `TOKEN_ENCRYPTION_KEY`,
 `GSC_CLIENT_ID`, `GSC_CLIENT_SECRET`, `GSC_REDIRECT_URI`, `APP_ORIGIN`, and `CORS_ORIGIN`.
 The redirect URI must use the deployed API domain and match the Google OAuth client.
 APP_ORIGIN and CORS_ORIGIN must use the deployed web domain.
@@ -23,6 +22,11 @@ Keep `GSC_SYNC_ENABLED=false` and `SERP_SYNC_ENABLED=false` on Vercel because in
 schedulers require a persistent process. Keyword ranks use the daily Vercel Cron entry
 in `apps/api/vercel.json`; set `CRON_SECRET` so Vercel can authenticate that request.
 Manual Search Console sync can still be tested within function duration limits.
+
+The API prebuild runs `prisma migrate deploy` only when Vercel exposes
+`VERCEL_ENV=production`. Local, Development, and Preview builds skip database
+migrations. A failed production migration stops the deployment instead of serving code
+that expects tables which do not exist.
 
 For keyword tracking with Serper, set `SERP_PROVIDER=serper` and `SERPER_API_KEY`.
 For DataForSEO, set `SERP_PROVIDER=dataforseo`, `DATAFORSEO_LOGIN`, and
@@ -35,7 +39,7 @@ first request. Add these variables to the deployed **API project**, for Producti
 Preview, and Development as needed, then redeploy the API.
 
 Check `/api/v1/health` after deployment, then test authenticated application requests
-and the Google connection. Do not run database migrations automatically in preview builds.
+and the Google connection. Preview builds never apply database migrations.
 
 References:
 - https://vercel.com/docs/frameworks/backend/nestjs
