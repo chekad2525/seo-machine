@@ -13,7 +13,7 @@
     "dev": "concurrently \"npm run dev -w @seo-machine/api\" \"npm run dev -w @seo-machine/web\"",
     "db:generate": "npm run db:generate -w @seo-machine/db",
     "db:migrate": "npm run db:migrate -w @seo-machine/db",
-    "test": "npm run test --workspaces --if-present",
+    "test": "node --test scripts/resolve-migration-url.test.mjs && npm run test --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present"
   },

@@ -1,13 +1,15 @@
 import { spawnSync } from 'node:child_process';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { resolveMigrationDatabaseUrl } from './resolve-migration-url.mjs';
 
 if (process.env.VERCEL_ENV !== 'production') {
   console.log(`[database] Migration skipped for ${process.env.VERCEL_ENV ?? 'local'} build.`);
   process.exit(0);
 }
 
-const migrationDatabaseUrl = process.env.DIRECT_URL?.trim() || process.env.DATABASE_URL?.trim();
+const migrationConnection = resolveMigrationDatabaseUrl();
+const migrationDatabaseUrl = migrationConnection.url;
 if (!migrationDatabaseUrl) {
   console.error('[database] DIRECT_URL or DATABASE_URL is required for the production migration.');
   process.exit(1);
@@ -15,11 +17,12 @@ if (!migrationDatabaseUrl) {
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-console.log('[database] Applying pending Prisma migrations to Production.');
+console.log(`[database] Applying pending Prisma migrations to Production via ${migrationConnection.source}.`);
 const migration = spawnSync(npmCommand, ['run', 'db:migrate'], {
   cwd: repositoryRoot,
   env: { ...process.env, DATABASE_URL: migrationDatabaseUrl },
   stdio: 'inherit',
+  timeout: 120_000,
 });
 
 if (migration.error) {

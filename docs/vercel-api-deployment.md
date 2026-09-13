@@ -29,7 +29,10 @@ migrations. A failed production migration stops the deployment instead of servin
 that expects tables which do not exist. If `DIRECT_URL` exists, the migration process
 uses it while the deployed application continues to use `DATABASE_URL`. For Supabase,
 keep the transaction pooler URL on port `6543` in `DATABASE_URL` and use the Direct
-connection or shared Session Pooler URL on port `5432` in `DIRECT_URL`.
+connection or shared Session Pooler URL on port `5432` in `DIRECT_URL`. When
+`DIRECT_URL` is absent and `DATABASE_URL` is a Supabase transaction-pooler URL, the
+build derives the matching Session Pooler URL automatically. Production migrations
+have a two-minute timeout so a database connectivity problem cannot hold a build open.
 
 For keyword tracking with Serper, set `SERP_PROVIDER=serper` and `SERPER_API_KEY`.
 For DataForSEO, set `SERP_PROVIDER=dataforseo`, `DATAFORSEO_LOGIN`, and
