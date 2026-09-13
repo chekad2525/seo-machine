@@ -79,15 +79,20 @@ export class DataForSeoRankService {
     await this.collect(userId, projectId);
     const tracked = await prisma.trackedKeyword.findMany({ where: { projectId, userId, serpTasks: { none: { checkDate, device: settings.device, locationCode } } }, select: { id: true, query: true } });
     let queued = 0;
+    const failures: string[] = [];
     for (const group of batches(tracked, 100)) {
       const payload = await this.request('/v3/serp/google/organic/task_post', { method: 'POST', body: JSON.stringify(group.map((item) => ({ keyword: item.query, location_name: settings.locationName, language_code: settings.languageCode, device: settings.device, depth: config.depth, stop_crawl_on_match: [{ match_value: domainOf(project.domain), match_type: 'with_subdomains' }], find_targets_in: ['organic', 'featured_snippet'], tag: item.id }))) });
       for (let index = 0; index < group.length; index++) {
         const task = payload.tasks?.[index];
-        if (!task?.id || (task.status_code && task.status_code !== 20100)) continue;
+        if (!task?.id || (task.status_code && task.status_code !== 20100)) {
+          failures.push(task?.status_message ?? 'DataForSEO did not accept the rank task.');
+          continue;
+        }
         await prisma.keywordSerpTask.create({ data: { trackedKeywordId: group[index].id, externalTaskId: task.id, checkDate, device: settings.device, locationCode, costUsd: task.cost ?? 0 } });
         queued++;
       }
     }
-    return { queued, skipped: tracked.length - queued, checkDate: checkDate.toISOString().slice(0, 10), provider: 'dataforseo' };
+    if (tracked.length && !queued && failures.length) throw new BadGatewayException(`DataForSEO rejected the rank request: ${failures[0]}`);
+    return { queued, skipped: tracked.length - queued, failed: failures.length, checkDate: checkDate.toISOString().slice(0, 10), provider: 'dataforseo' };
   }
 }

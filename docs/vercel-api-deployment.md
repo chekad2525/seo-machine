@@ -28,7 +28,11 @@ For keyword tracking with Serper, set `SERP_PROVIDER=serper` and `SERPER_API_KEY
 For DataForSEO, set `SERP_PROVIDER=dataforseo`, `DATAFORSEO_LOGIN`, and
 `DATAFORSEO_PASSWORD`. Country, language, location, and device are selected inside
 each project's keyword tracker instead of environment variables. Serper tracking is
-desktop-only in this application; DataForSEO supports desktop and mobile.
+desktop-only in this application; DataForSEO supports desktop and mobile. Use the API
+login and generated API password from DataForSEO's API Access page (the API password
+is different from the account password), and verify the DataForSEO account before the
+first request. Add these variables to the deployed **API project**, for Production,
+Preview, and Development as needed, then redeploy the API.
 
 Check `/api/v1/health` after deployment, then test authenticated application requests
 and the Google connection. Do not run database migrations automatically in preview builds.

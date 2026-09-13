@@ -37,4 +37,13 @@ describe('project settings in rank providers', () => {
     const request = (global.fetch as jest.Mock).mock.calls.find((call) => String(call[0]).includes('task_post'));
     expect(JSON.parse(request[1].body)[0]).toMatchObject({ location_name: 'Dubai,United Arab Emirates', language_code: 'ar', device: 'mobile' });
   });
+
+  it('surfaces a DataForSEO account or task rejection instead of silently skipping every keyword', async () => {
+    process.env.DATAFORSEO_LOGIN = 'login'; process.env.DATAFORSEO_PASSWORD = 'password';
+    (prisma.project.findFirst as jest.Mock).mockResolvedValue({ domain: 'example.com', keywordTrackingSetting: null });
+    (prisma.keywordSerpTask.findMany as jest.Mock).mockResolvedValue([]);
+    (prisma.trackedKeyword.findMany as jest.Mock).mockResolvedValue([{ id: 'keyword', query: 'seo' }]);
+    global.fetch = jest.fn().mockResolvedValue(new Response(JSON.stringify({ status_code: 20000, tasks: [{ status_code: 40201, status_message: 'Account verification required' }] }), { status: 200 }));
+    await expect(new DataForSeoRankService().enqueue('user', 'project')).rejects.toThrow('Account verification required');
+  });
 });
