@@ -3,13 +3,29 @@ import { prisma } from '@seo-machine/db';
 import { resolveKeywordTrackingSettings, trackingLocationCode, type KeywordTrackingSettings } from '../keyword-tracking/keyword-tracking-settings';
 
 type DfsResult = { id?: string; items?: DfsItem[] };
-type DfsTask = { id?: string; status_code?: number; status_message?: string; cost?: number; result?: DfsResult[] };
+type DfsLocation = { location_code?: number; location_name?: string; country_iso_code?: string; location_type?: string };
+type DfsTask<T = DfsResult> = { id?: string; status_code?: number; status_message?: string; cost?: number; result?: T[] };
 type DfsItem = { type?: string; rank_absolute?: number; rank_group?: number; url?: string; domain?: string };
-type DfsResponse = { status_code?: number; status_message?: string; tasks?: DfsTask[] };
+type DfsResponse<T = DfsResult> = { status_code?: number; status_message?: string; tasks?: DfsTask<T>[] };
 
 function utcDate(value = new Date()) { return new Date(Date.UTC(value.getUTCFullYear(), value.getUTCMonth(), value.getUTCDate())); }
 function domainOf(value: string) { try { return new URL(value.includes('://') ? value : `https://${value}`).hostname.toLowerCase().replace(/^www\./, ''); } catch { return value.toLowerCase().replace(/^www\./, '').split('/')[0]; } }
 function batches<T>(items: T[], size: number) { const result: T[][] = []; for (let index = 0; index < items.length; index += size) result.push(items.slice(index, index + size)); return result; }
+function normalizedLocation(value: string) { return value.normalize('NFKC').toLowerCase().split(',').map((part) => part.trim().replace(/\s+/g, ' ')).filter(Boolean); }
+
+export function selectDataForSeoLocation(locations: DfsLocation[], requestedName: string, countryCode: string) {
+  const country = countryCode.trim().toUpperCase();
+  const eligible = locations.filter((location) => location.location_code && (!location.country_iso_code || location.country_iso_code.toUpperCase() === country));
+  const requested = normalizedLocation(requestedName);
+  const exact = eligible.find((location) => normalizedLocation(location.location_name ?? '').join(',') === requested.join(','));
+  if (exact) return exact;
+  const city = requested[0];
+  const cityMatch = city ? eligible.find((location) => normalizedLocation(location.location_name ?? '')[0] === city) : undefined;
+  if (cityMatch) return cityMatch;
+  return eligible.find((location) => location.location_type?.toLowerCase() === 'country')
+    ?? eligible.find((location) => normalizedLocation(location.location_name ?? '').length === 1)
+    ?? null;
+}
 
 export function findDomainRank(items: DfsItem[], targetDomain: string) {
   const domain = domainOf(targetDomain);
@@ -20,6 +36,8 @@ export function findDomainRank(items: DfsItem[], targetDomain: string) {
 
 @Injectable()
 export class DataForSeoRankService {
+  private readonly locationCache = new Map<string, { expiresAt: number; locations: DfsLocation[] }>();
+
   private config() {
     const login = process.env.DATAFORSEO_LOGIN?.trim();
     const password = process.env.DATAFORSEO_PASSWORD?.trim();
@@ -28,14 +46,30 @@ export class DataForSeoRankService {
     return { login, password, depth };
   }
 
-  private async request(path: string, init?: RequestInit) {
+  private async request<T = DfsResult>(path: string, init?: RequestInit) {
     const { login, password } = this.config();
     const response = await fetch(`https://api.dataforseo.com${path}`, { ...init, signal: AbortSignal.timeout(30_000), headers: { authorization: `Basic ${Buffer.from(`${login}:${password}`).toString('base64')}`, 'content-type': 'application/json', ...(init?.headers ?? {}) } });
     const text = await response.text();
-    let payload: DfsResponse;
-    try { payload = JSON.parse(text) as DfsResponse; } catch { throw new BadGatewayException('DataForSEO returned an invalid response.'); }
+    let payload: DfsResponse<T>;
+    try { payload = JSON.parse(text) as DfsResponse<T>; } catch { throw new BadGatewayException('DataForSEO returned an invalid response.'); }
     if (!response.ok || (payload.status_code && payload.status_code !== 20000)) throw new BadGatewayException(payload.status_message ?? 'DataForSEO request failed.');
     return payload;
+  }
+
+  private async resolveLocation(settings: KeywordTrackingSettings) {
+    const countryCode = settings.countryCode.trim().toUpperCase();
+    const cached = this.locationCache.get(countryCode);
+    let locations = cached?.expiresAt && cached.expiresAt > Date.now() ? cached.locations : undefined;
+    if (!locations) {
+      const payload = await this.request<DfsLocation>(`/v3/serp/google/locations/${encodeURIComponent(countryCode)}`);
+      const task = payload.tasks?.[0];
+      if (task?.status_code && task.status_code !== 20000) throw new BadGatewayException(task.status_message ?? 'DataForSEO location lookup failed.');
+      locations = task?.result ?? [];
+      this.locationCache.set(countryCode, { expiresAt: Date.now() + 24 * 60 * 60 * 1000, locations });
+    }
+    const location = selectDataForSeoLocation(locations, settings.locationName, countryCode);
+    if (!location?.location_code) throw new BadGatewayException(`DataForSEO has no supported Google location for ${settings.locationName || countryCode}.`);
+    return location.location_code;
   }
 
   private async scope(userId: string, projectId: string) {
@@ -78,10 +112,12 @@ export class DataForSeoRankService {
     const checkDate = utcDate();
     await this.collect(userId, projectId);
     const tracked = await prisma.trackedKeyword.findMany({ where: { projectId, userId, serpTasks: { none: { checkDate, device: settings.device, locationCode } } }, select: { id: true, query: true } });
+    if (!tracked.length) return { queued: 0, skipped: 0, failed: 0, checkDate: checkDate.toISOString().slice(0, 10), provider: 'dataforseo' };
+    const providerLocationCode = await this.resolveLocation(settings);
     let queued = 0;
     const failures: string[] = [];
     for (const group of batches(tracked, 100)) {
-      const payload = await this.request('/v3/serp/google/organic/task_post', { method: 'POST', body: JSON.stringify(group.map((item) => ({ keyword: item.query, location_name: settings.locationName, language_code: settings.languageCode, device: settings.device, depth: config.depth, stop_crawl_on_match: [{ match_value: domainOf(project.domain), match_type: 'with_subdomains' }], find_targets_in: ['organic', 'featured_snippet'], tag: item.id }))) });
+      const payload = await this.request('/v3/serp/google/organic/task_post', { method: 'POST', body: JSON.stringify(group.map((item) => ({ keyword: item.query, location_code: providerLocationCode, language_code: settings.languageCode, device: settings.device, depth: config.depth, stop_crawl_on_match: [{ match_value: domainOf(project.domain), match_type: 'with_subdomains' }], find_targets_in: ['organic', 'featured_snippet'], tag: item.id }))) });
       for (let index = 0; index < group.length; index++) {
         const task = payload.tasks?.[index];
         if (!task?.id || (task.status_code && task.status_code !== 20100)) {
