@@ -38,7 +38,7 @@ export class KeywordTrackingController {
     });
     if (dto.action === 'remove') return this.service.remove(userId, dto.projectId, dto.id ?? '');
     if (dto.action === 'exact-collect') return this.ranks.collect(userId, dto.projectId);
-    return this.ranks.enqueue(userId, dto.projectId);
+    return this.ranks.enqueue(userId, dto.projectId, dto.action === 'exact-refresh');
   }
 
   @PublicApi()

@@ -3,6 +3,9 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import Brand from '../components/brand';
 import PhoneSignIn from './phone-sign-in';
+import { privatePageMetadata } from '../../lib/seo';
+
+export const metadata = privatePageMetadata('ورود امن به حساب', 'ورود امن به فضای کاری خصوصی SEO Machine با حساب گوگل یا شماره موبایل تأییدشده.', true);
 
 export default async function SignInPage() {
   const session = await auth();

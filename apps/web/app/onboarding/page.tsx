@@ -4,6 +4,9 @@ import Link from 'next/link';
 import Brand from '../components/brand';
 import OnboardingForm from './onboarding-form';
 import { internalApiFetch } from '../../lib/internal-api';
+import { privatePageMetadata } from '../../lib/seo';
+
+export const metadata = privatePageMetadata('راه‌اندازی فضای کاری', 'راه‌اندازی خصوصی سازمان، فضای کاری و اولین پروژه برای تحلیل داده‌های جست‌وجو در SEO Machine.');
 
 export default async function OnboardingPage() {
   const session = await auth();

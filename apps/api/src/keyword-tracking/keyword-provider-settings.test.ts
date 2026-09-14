@@ -5,7 +5,7 @@ import { SerperRankService } from '../search-console/serper-rank.service';
 jest.mock('@seo-machine/db', () => ({ prisma: {
   project: { findFirst: jest.fn() }, trackedKeyword: { findMany: jest.fn() },
   keywordRankSnapshot: { findMany: jest.fn(), upsert: jest.fn() },
-  keywordSerpTask: { findMany: jest.fn(), create: jest.fn() },
+  keywordSerpTask: { findMany: jest.fn(), create: jest.fn(), upsert: jest.fn() },
 } }));
 
 describe('project settings in rank providers', () => {
@@ -24,6 +24,20 @@ describe('project settings in rank providers', () => {
     await new SerperRankService().check('user', 'project');
     expect(JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body)).toMatchObject({ gl: 'ae', hl: 'ar', location: 'Dubai' });
     expect(prisma.keywordRankSnapshot.upsert).toHaveBeenCalledWith(expect.objectContaining({ create: expect.objectContaining({ device: 'desktop' }) }));
+  });
+
+  it('paginates Serper results and stores an absolute rank beyond the first page', async () => {
+    process.env.SERPER_API_KEY = 'secret'; process.env.SERPER_RESULT_COUNT = '30';
+    (prisma.project.findFirst as jest.Mock).mockResolvedValue({ domain: 'example.com', keywordTrackingSetting: { countryCode: 'ir', languageCode: 'fa', locationName: 'Tehran', device: 'desktop' } });
+    (prisma.keywordRankSnapshot.findMany as jest.Mock).mockResolvedValue([]);
+    (prisma.trackedKeyword.findMany as jest.Mock).mockResolvedValue([{ id: 'keyword', query: 'seo' }]);
+    (prisma.keywordRankSnapshot.upsert as jest.Mock).mockResolvedValue({});
+    global.fetch = jest.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ organic: [{ link: 'https://competitor.test', position: 1 }] }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ organic: [{ link: 'https://example.com/page', position: 4 }] }), { status: 200 }));
+    await new SerperRankService().check('user', 'project');
+    expect(JSON.parse((global.fetch as jest.Mock).mock.calls[1][1].body)).toMatchObject({ page: 2, num: 10, gl: 'ir', hl: 'fa', location: 'Tehran' });
+    expect(prisma.keywordRankSnapshot.upsert).toHaveBeenCalledWith(expect.objectContaining({ create: expect.objectContaining({ rankAbsolute: 14 }) }));
   });
 
   it('sends project location and mobile device to DataForSEO', async () => {

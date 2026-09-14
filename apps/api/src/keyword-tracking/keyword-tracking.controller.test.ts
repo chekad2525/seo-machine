@@ -21,3 +21,17 @@ describe('keyword tracking cron endpoint', () => {
     expect(tick).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('keyword tracking rank actions', () => {
+  it('forces a fresh provider request for exact-refresh', async () => {
+    const enqueue = jest.fn().mockResolvedValue({ checked: 1 });
+    const controller = new KeywordTrackingController(
+      {} as KeywordTrackingService,
+      { enqueue } as unknown as ExactRankService,
+      {} as KeywordRankSchedulerService,
+    );
+
+    await expect(controller.mutate('user', { projectId: 'project', action: 'exact-refresh' })).resolves.toEqual({ checked: 1 });
+    expect(enqueue).toHaveBeenCalledWith('user', 'project', true);
+  });
+});

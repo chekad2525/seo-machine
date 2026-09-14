@@ -13,4 +13,8 @@ describe('Serper rank parsing', () => {
       rankAbsolute: null, rankGroup: null, resultUrl: null,
     });
   });
+
+  it('counts a ranking URL on a subdomain as part of the tracked domain', () => {
+    expect(findSerperRank([{ link: 'https://shop.example.com/product', position: 18 }], 'example.com').rankAbsolute).toBe(18);
+  });
 });

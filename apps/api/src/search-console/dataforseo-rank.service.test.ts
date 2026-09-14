@@ -8,6 +8,10 @@ describe('DataForSEO rank parsing', () => {
   it('records a null rank when the domain is absent', () => {
     expect(findDomainRank([{ type: 'organic', domain: 'competitor.com', rank_absolute: 1 }], 'example.com').rankAbsolute).toBeNull();
   });
+
+  it('counts a ranking URL on a subdomain as part of the tracked domain', () => {
+    expect(findDomainRank([{ type: 'organic', domain: 'shop.example.com', url: 'https://shop.example.com/product', rank_absolute: 18 }], 'example.com').rankAbsolute).toBe(18);
+  });
 });
 
 describe('DataForSEO location resolution', () => {

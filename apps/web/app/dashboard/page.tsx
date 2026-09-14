@@ -6,6 +6,9 @@ import SyncSearchConsole from './sync-search-console';
 import { internalApiFetch } from '../../lib/internal-api';
 import SearchPerformance, { type SearchPerformanceSummary } from './search-performance';
 import AppHeader from '../components/app-header';
+import { privatePageMetadata } from '../../lib/seo';
+
+export const metadata = privatePageMetadata('داشبورد عملکرد جست‌وجو', 'نمای خصوصی وضعیت پروژه، اتصال Search Console و شاخص‌های عملکرد جست‌وجوی سازمان شما.');
 
 const gscMessages: Record<string, string> = {
   'upstream-rejected': 'سرویس گوگل به‌جای پاسخ API، صفحهٔ خطا برگرداند. علت هنوز مشخص نیست؛ اتصال تأیید نشده است.',

@@ -33,6 +33,7 @@ const IRAN_LOCATION_COORDINATES: Record<string, string> = {
 
 function utcDate(value = new Date()) { return new Date(Date.UTC(value.getUTCFullYear(), value.getUTCMonth(), value.getUTCDate())); }
 function domainOf(value: string) { try { return new URL(value.includes('://') ? value : `https://${value}`).hostname.toLowerCase().replace(/^www\./, ''); } catch { return value.toLowerCase().replace(/^www\./, '').split('/')[0]; } }
+function isSameDomain(candidate: string, target: string) { const candidateDomain = domainOf(candidate); const targetDomain = domainOf(target); return candidateDomain === targetDomain || candidateDomain.endsWith(`.${targetDomain}`); }
 function batches<T>(items: T[], size: number) { const result: T[][] = []; for (let index = 0; index < items.length; index += size) result.push(items.slice(index, index + size)); return result; }
 function normalizedLocation(value: string) { return value.normalize('NFKC').toLowerCase().split(',').map((part) => part.trim().replace(/\s+/g, ' ')).filter(Boolean); }
 
@@ -57,9 +58,8 @@ export function fallbackDataForSeoCoordinates(requestedName: string, countryCode
 }
 
 export function findDomainRank(items: DfsItem[], targetDomain: string) {
-  const domain = domainOf(targetDomain);
   const eligible = items.filter((item) => ['organic', 'featured_snippet'].includes(item.type ?? ''));
-  const match = eligible.find((item) => domainOf(item.domain ?? item.url ?? '') === domain);
+  const match = eligible.find((item) => isSameDomain(item.domain ?? item.url ?? '', targetDomain));
   return { rankAbsolute: match?.rank_absolute ?? null, rankGroup: match?.rank_group ?? null, resultUrl: match?.url ?? null, serpFeatures: [...new Set(items.map((item) => item.type).filter((type): type is string => Boolean(type)))] };
 }
 
@@ -135,14 +135,14 @@ export class DataForSeoRankService {
     return { collected, pending: remaining };
   }
 
-  async enqueue(userId: string, projectId: string) {
+  async enqueue(userId: string, projectId: string, force = false) {
     const project = await this.scope(userId, projectId);
     const config = this.config();
     const settings = resolveKeywordTrackingSettings(project.keywordTrackingSetting as Partial<KeywordTrackingSettings> | null);
     const locationCode = trackingLocationCode(settings);
     const checkDate = utcDate();
     await this.collect(userId, projectId);
-    const tracked = await prisma.trackedKeyword.findMany({ where: { projectId, userId, serpTasks: { none: { checkDate, device: settings.device, locationCode } } }, select: { id: true, query: true } });
+    const tracked = await prisma.trackedKeyword.findMany({ where: { projectId, userId, ...(!force ? { serpTasks: { none: { checkDate, device: settings.device, locationCode } } } : {}) }, select: { id: true, query: true } });
     if (!tracked.length) return { queued: 0, skipped: 0, failed: 0, checkDate: checkDate.toISOString().slice(0, 10), provider: 'dataforseo' };
     const providerLocation = await this.resolveLocation(settings);
     let queued = 0;
@@ -155,7 +155,16 @@ export class DataForSeoRankService {
           failures.push(task?.status_message ?? 'DataForSEO did not accept the rank task.');
           continue;
         }
-        await prisma.keywordSerpTask.create({ data: { trackedKeywordId: group[index].id, externalTaskId: task.id, checkDate, device: settings.device, locationCode, costUsd: task.cost ?? 0 } });
+        const data = { trackedKeywordId: group[index].id, externalTaskId: task.id, checkDate, device: settings.device, locationCode, costUsd: task.cost ?? 0 };
+        if (force) {
+          await prisma.keywordSerpTask.upsert({
+            where: { trackedKeywordId_checkDate_device_locationCode: { trackedKeywordId: group[index].id, checkDate, device: settings.device, locationCode } },
+            create: data,
+            update: { externalTaskId: task.id, status: 'PENDING', costUsd: task.cost ?? 0, errorMessage: null, requestedAt: new Date(), completedAt: null },
+          });
+        } else {
+          await prisma.keywordSerpTask.create({ data });
+        }
         queued++;
       }
     }

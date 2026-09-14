@@ -22,6 +22,12 @@ function domainOf(value: string) {
   }
 }
 
+function isSameDomain(candidate: string, target: string) {
+  const candidateDomain = domainOf(candidate);
+  const targetDomain = domainOf(target);
+  return candidateDomain === targetDomain || candidateDomain.endsWith(`.${targetDomain}`);
+}
+
 function batches<T>(items: T[], size: number) {
   const output: T[][] = [];
   for (let index = 0; index < items.length; index += size) output.push(items.slice(index, index + size));
@@ -29,8 +35,7 @@ function batches<T>(items: T[], size: number) {
 }
 
 export function findSerperRank(items: SerperOrganicResult[], targetDomain: string) {
-  const domain = domainOf(targetDomain);
-  const match = items.find((item) => item.link && domainOf(item.link) === domain);
+  const match = items.find((item) => item.link && isSameDomain(item.link, targetDomain));
   return {
     rankAbsolute: Number.isInteger(match?.position) ? match!.position! : null,
     rankGroup: Number.isInteger(match?.position) ? match!.position! : null,
@@ -58,12 +63,13 @@ export class SerperRankService {
     return project;
   }
 
-  private async search(keyword: string, config: ReturnType<SerperRankService['config']>, settings: ReturnType<typeof resolveKeywordTrackingSettings>) {
+  private async searchPage(keyword: string, page: number, config: ReturnType<SerperRankService['config']>, settings: ReturnType<typeof resolveKeywordTrackingSettings>) {
     const body: Record<string, string | number> = {
       q: keyword,
       gl: settings.countryCode,
       hl: settings.languageCode,
-      num: config.resultCount,
+      num: 10,
+      page,
     };
     if (settings.locationName) body.location = settings.locationName;
     const response = await fetch('https://google.serper.dev/search', {
@@ -84,7 +90,29 @@ export class SerperRankService {
     return payload;
   }
 
-  async check(userId: string, projectId: string) {
+  private async search(keyword: string, targetDomain: string, config: ReturnType<SerperRankService['config']>, settings: ReturnType<typeof resolveKeywordTrackingSettings>) {
+    const organic: SerperOrganicResult[] = [];
+    const seen = new Set<string>();
+    let response: SerperResponse = { organic: [] };
+    const pageCount = Math.ceil(config.resultCount / 10);
+    for (let page = 1; page <= pageCount; page++) {
+      const current = await this.searchPage(keyword, page, config, settings);
+      response = current;
+      let added = 0;
+      for (const [index, item] of (current.organic ?? []).entries()) {
+        if (!item.link || seen.has(item.link)) continue;
+        seen.add(item.link);
+        const reported = Number.isInteger(item.position) ? item.position! : index + 1;
+        const position = page > 1 && reported <= 10 ? ((page - 1) * 10) + reported : reported;
+        organic.push({ ...item, position });
+        added++;
+      }
+      if (findSerperRank(organic, targetDomain).rankAbsolute !== null || !current.organic?.length || !added) break;
+    }
+    return { ...response, organic };
+  }
+
+  async check(userId: string, projectId: string, force = false) {
     const project = await this.scope(userId, projectId);
     const config = this.config();
     const settings = { ...resolveKeywordTrackingSettings(project.keywordTrackingSetting as Partial<KeywordTrackingSettings> | null), device: 'desktop' as const };
@@ -97,7 +125,7 @@ export class SerperRankService {
       },
       select: { trackedKeywordId: true },
     });
-    const completedIds = completedToday.map((item) => item.trackedKeywordId);
+    const completedIds = force ? [] : completedToday.map((item) => item.trackedKeywordId);
     const dueKeywords = await prisma.trackedKeyword.findMany({
       where: { projectId, userId, ...(completedIds.length ? { id: { notIn: completedIds } } : {}) },
       select: { id: true, query: true },
@@ -112,7 +140,7 @@ export class SerperRankService {
     for (const group of batches(tracked, 5)) {
       await Promise.all(group.map(async (keyword) => {
         try {
-          const payload = await this.search(keyword.query, config, settings);
+          const payload = await this.search(keyword.query, project.domain, config, settings);
           const rank = findSerperRank(payload.organic ?? [], project.domain);
           const serpFeatures = Object.keys(payload).filter((key) => !['searchParameters', 'credits'].includes(key));
           await prisma.keywordRankSnapshot.upsert({

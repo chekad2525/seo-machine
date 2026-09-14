@@ -58,9 +58,12 @@ export class KeywordTrackingService {
     }).sort((a, b) => (a.exact?.rank ?? 999) - (b.exact?.rank ?? 999));
     const ranked = keywords.filter((item) => item.exact?.rank !== null && item.exact?.rank !== undefined);
     const providerName = config.provider === 'dataforseo' ? 'DataForSEO' : 'Serper';
+    const configuredDepth = config.provider === 'dataforseo' ? process.env.DATAFORSEO_DEPTH : process.env.SERPER_RESULT_COUNT;
+    const rankDepth = Math.min(Math.max(Number(configuredDepth ?? 100), 10), 100);
     return {
       settings,
       capabilities: { mobile: config.provider === 'dataforseo' },
+      rankDepth,
       summary: {
         tracked: keywords.length,
         checked: keywords.filter((item) => item.exact || item.exactStatus === 'COMPLETED').length,
@@ -69,7 +72,7 @@ export class KeywordTrackingService {
         improved: ranked.filter((item) => (item.exact?.change ?? 0) < 0).length,
         declined: ranked.filter((item) => (item.exact?.change ?? 0) > 0).length,
       },
-      exactRankNote: `رتبه ${settings.device === 'mobile' ? 'موبایل' : 'دسکتاپ'} با ${providerName} برای ${settings.locationName} از نتایج واقعی گوگل خوانده می‌شود.`,
+      exactRankNote: `رتبه ${settings.device === 'mobile' ? 'موبایل' : 'دسکتاپ'} با ${providerName} برای ${settings.locationName} تا عمق ${rankDepth} نتیجه گوگل بررسی می‌شود.`,
       exactRankReady: config.configured,
       keywords,
     };

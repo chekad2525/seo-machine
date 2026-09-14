@@ -26,10 +26,10 @@ export class ExactRankService {
     return config.provider;
   }
 
-  enqueue(userId: string, projectId: string) {
+  enqueue(userId: string, projectId: string, force = false) {
     return this.provider() === 'serper'
-      ? this.serper.check(userId, projectId)
-      : this.dataForSeo.enqueue(userId, projectId);
+      ? this.serper.check(userId, projectId, force)
+      : this.dataForSeo.enqueue(userId, projectId, force);
   }
 
   collect(userId: string, projectId: string) {
