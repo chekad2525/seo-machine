@@ -5,11 +5,10 @@ import Brand from '../components/brand';
 import SearchPerformance, { type SearchPerformanceSummary } from '../dashboard/search-performance';
 import AppHeader from '../components/app-header';
 import { privatePageMetadata } from '../../lib/seo';
+import { MetricTable, OpportunityTable, ReportToolbar, type Metric, type SelectedOpportunity } from './analytics-report';
 
 export const metadata = privatePageMetadata('تحلیل فرصت‌های سئو', 'تحلیل خصوصی عبارت‌ها، صفحات و فرصت‌های اولویت‌دار بر پایه داده‌های Google Search Console.');
 
-type Metric = { label: string; clicks: number; impressions: number; ctr: number; position: number };
-type SelectedOpportunity = Omit<Metric, 'label'> & { query: string; page: string; score: number; reason: 'low-ctr' | 'striking-distance' };
 type Recommendation = {
   id: string;
   priority: 'high' | 'medium' | 'low';
@@ -43,27 +42,6 @@ async function internalJson<T>(target: string, userId: string): Promise<T | null
 }
 
 const faNumber = new Intl.NumberFormat('fa-IR');
-const faDecimal = new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 1 });
-
-function MetricTable({ title, subtitle, rows }: { title: string; subtitle: string; rows: Metric[] }) {
-  return <section className="analysis-table-card">
-    <div className="analysis-section-head"><div><h2>{title}</h2><p>{subtitle}</p></div><span>{faNumber.format(rows.length)} مورد</span></div>
-    {rows.length ? <div className="analysis-table-scroll"><table className="analysis-table">
-      <thead><tr><th>عبارت / صفحه</th><th>کلیک</th><th>نمایش</th><th>CTR</th><th>میانگین جایگاه</th></tr></thead>
-      <tbody>{rows.map((row) => <tr key={row.label}>
-        <td title={row.label}>{row.label}</td><td>{faNumber.format(row.clicks)}</td><td>{faNumber.format(row.impressions)}</td><td>{faDecimal.format(row.ctr * 100)}٪</td><td>{faDecimal.format(row.position)}</td>
-      </tr>)}</tbody>
-    </table></div> : <div className="analysis-empty">در این بازه موردی با معیار انتخاب‌شده پیدا نشد.</div>}
-  </section>;
-}
-
-function OpportunityTable({ rows }: { rows: SelectedOpportunity[] }) {
-  return <section className="analysis-table-card selected-opportunities">
-    <div className="analysis-section-head"><div><h2>فهرست کوتاه بهبود</h2><p>فقط فرصت‌هایی که از فیلتر داده و امتیاز اولویت عبور کرده‌اند</p></div><span>{faNumber.format(rows.length)} فرصت منتخب</span></div>
-    {rows.length ? <div className="analysis-table-scroll"><table className="analysis-table"><thead><tr><th>کلمه کلیدی</th><th>صفحه</th><th>دلیل</th><th>نمایش</th><th>میانگین جایگاه</th><th>امتیاز</th></tr></thead><tbody>{rows.map((row) => <tr key={`${row.query}-${row.page}`}><td title={row.query}>{row.query}</td><td title={row.page}>{row.page}</td><td>{row.reason === 'low-ctr' ? 'CTR پایین' : 'نزدیک صفحه اول'}</td><td>{faNumber.format(row.impressions)}</td><td>{faDecimal.format(row.position)}</td><td><b className="opportunity-score">{faNumber.format(row.score)}</b></td></tr>)}</tbody></table></div> : <div className="analysis-empty">برای ساخت این فهرست، پس از اعمال migration یک‌بار داده‌ها را دوباره همگام‌سازی کنید.</div>}
-  </section>;
-}
-
 export default async function AnalyticsPage() {
   const session = await auth();
   if (!session?.user) return <main className="auth-shell app-guard" dir="rtl"><div className="app-guard-card"><Brand/><h1>برای دیدن تحلیل‌ها وارد شوید.</h1><Link className="app-submit" href="/sign-in">ورود به حساب</Link></div></main>;
@@ -82,6 +60,7 @@ export default async function AnalyticsPage() {
       <div className="analysis-hero"><div><p className="app-overline">مرکز تحلیل Search Console</p><h1>فرصت‌ها را از دل داده پیدا کنید.</h1><p>میانگین جایگاه، نمایش و نرخ کلیک را به اقدام‌های قابل‌اندازه‌گیری تبدیل کنید.</p></div><div className="analysis-freshness"><span>آخرین همگام‌سازی</span><strong>{latest?.completedAt ? new Date(latest.completedAt).toLocaleString('fa-IR') : 'نامشخص'}</strong><small>{latest?.rowsUpserted ? `${faNumber.format(latest.rowsUpserted)} ردیف پردازش شده` : 'داده همگام‌سازی نشده است'}</small></div></div>
 
       {!project || !summary || !insights ? <section className="analysis-unavailable"><h2>داده تحلیل آماده نیست.</h2><p>ابتدا اتصال Search Console و همگام‌سازی داده‌ها را در داشبورد بررسی کنید.</p><Link className="app-submit inline" href="/dashboard">بازگشت به داشبورد</Link></section> : <>
+        <ReportToolbar domain={project.domain} topQueries={insights.topQueries} topPages={insights.topPages} opportunities={insights.opportunities.selected}/>
         <div className="analysis-counts" aria-label="پوشش داده"><article><span>عبارت‌های بررسی‌شده</span><strong>{faNumber.format(insights.counts.queries)}</strong></article><article><span>صفحه‌های بررسی‌شده</span><strong>{faNumber.format(insights.counts.pages)}</strong></article><article><span>کلمات منتخب</span><strong>{faNumber.format(insights.counts.selectedKeywords)}</strong></article><article><span>صفحات منتخب</span><strong>{faNumber.format(insights.counts.selectedPages)}</strong></article></div>
         <SearchPerformance summary={summary}/>
         <OpportunityTable rows={insights.opportunities.selected}/>
