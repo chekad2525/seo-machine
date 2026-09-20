@@ -1,0 +1,23 @@
+{
+  "auditedAt": "2026-09-15T05:33:28.4336255Z",
+  "scoreType": "provisional-source-level",
+  "overallScore": 81,
+  "baseline": {
+    "technical": 50,
+    "content": 64,
+    "aiCitationReadiness": 43,
+    "eeat": 37
+  },
+  "limitations": [
+    "No production URL was supplied",
+    "No field Core Web Vitals or Lighthouse run",
+    "No Google Search Console index coverage data",
+    "No production SERP or backlink data"
+  ],
+  "verification": {
+    "productionBuild": "passed",
+    "typecheck": "passed",
+    "tests": "passed",
+    "localHttpSeoRoutes": "passed"
+  }
+}

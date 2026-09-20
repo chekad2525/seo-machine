@@ -1,0 +1,11 @@
+{
+  "auditedAt": "2026-09-15T05:33:28.4336255Z",
+  "auditMode": "source-and-local-production-runtime",
+  "framework": "Next.js 14 App Router",
+  "locale": "fa-IR",
+  "publicIndexableRoutes": ["/"],
+  "privateNoindexRoutes": ["/sign-in", "/onboarding", "/dashboard", "/analytics", "/keywords"],
+  "generatedSeoEndpoints": ["/robots.txt", "/sitemap.xml", "/llms.txt"],
+  "productionOriginRequired": true,
+  "liveDomainAudited": false
+}
