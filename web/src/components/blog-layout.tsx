@@ -2,10 +2,10 @@ import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
 const navLinks = [
-  { label: "Features", to: "/features" },
-  { label: "Blog", to: "/blogs" },
-  { label: "Docs", to: "/docs" },
-  { label: "Pricing", to: "/pricing" },
+  { label: "امکانات", to: "/features" },
+  { label: "وبلاگ", to: "/blogs" },
+  { label: "مستندات", to: "/docs" },
+  { label: "تعرفه‌ها", to: "/pricing" },
 ] as const;
 
 export function BlogLayout({ children }: { children: ReactNode }) {
@@ -21,7 +21,7 @@ export function BlogLayout({ children }: { children: ReactNode }) {
           </Link>
 
           <nav
-            aria-label="Blog navigation"
+            aria-label="منوی وبلاگ"
             className="flex min-w-0 items-center justify-end gap-4 overflow-x-auto text-sm font-medium text-[var(--color-brand-muted)] sm:gap-6"
           >
             {navLinks.map((link) => (
@@ -29,7 +29,7 @@ export function BlogLayout({ children }: { children: ReactNode }) {
                 key={link.to}
                 to={link.to}
                 className={`shrink-0 transition-colors hover:text-neutral-950 ${
-                  link.label === "Features" || link.label === "Pricing"
+                  link.to === "/features" || link.to === "/pricing"
                     ? "hidden sm:inline"
                     : ""
                 }`}
