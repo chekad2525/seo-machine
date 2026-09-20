@@ -84,3 +84,16 @@ if (
   );
   process.exit(1);
 }
+
+for (const legalFile of [
+  "web/content/legal/terms-and-conditions.md",
+  "web/content/legal/privacy.md",
+]) {
+  const legalText = readFileSync(legalFile, "utf8");
+  if (/Every App, Inc|ben@openseo\.so|https:\/\/openseo\.so/i.test(legalText)) {
+    console.error(
+      `${legalFile} still contains OpenSEO's operator details. Replace and approve the SEO Machine legal text before public deployment.`,
+    );
+    process.exit(1);
+  }
+}
