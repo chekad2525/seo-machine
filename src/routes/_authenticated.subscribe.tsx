@@ -17,7 +17,7 @@ import {
   AUTUMN_PAID_PLAN_ID,
 } from "@/shared/billing";
 
-const SUPPORT_EMAIL = "ben@openseo.so";
+const SUPPORT_EMAIL = import.meta.env.VITE_SUPPORT_EMAIL || "seomachine@info.ir";
 
 const PLAN_FEATURES = [
   "Keyword research, backlinks, rank tracking, and site audits",
@@ -260,7 +260,7 @@ function SubscribePage() {
           <li className="-mt-1 pl-6 text-xs">
             <a
               className="text-base-content/60 underline decoration-base-content/40 decoration-dotted underline-offset-4 transition-colors hover:text-base-content"
-              href="https://openseo.so/pricing"
+              href="https://seomachine.ir/pricing"
               target="_blank"
               rel="noreferrer"
               onClick={() =>

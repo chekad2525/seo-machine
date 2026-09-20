@@ -476,7 +476,7 @@ function McpSection() {
             <pre>
               <code>
                 <span className="t-orange">›</span> find and cluster keywords
-                for <span className="t-bright">openseo.so</span>
+                for <span className="t-bright">seomachine.ir</span>
                 {"\n\n"}
                 <span className="t-dim">
                   ⏺ openseo.keyword_research(seed: &quot;open source seo&quot;)
@@ -506,7 +506,7 @@ function McpSection() {
                 {"\n"}
                 <span className="t-orange">↳</span>
                 <span className="t-dim"> View data in app: </span>
-                <span className="t-bright">app.openseo.so/keywords</span>
+                <span className="t-bright">app.seomachine.ir/keywords</span>
               </code>
             </pre>
           </div>

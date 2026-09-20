@@ -19,7 +19,7 @@ export function ApiKeySettings() {
 
   const mcpUrl =
     typeof window === "undefined"
-      ? "https://app.openseo.so/mcp"
+      ? "https://app.seomachine.ir/mcp"
       : `${window.location.origin}/mcp`;
 
   const apiKeysQuery = useQuery({
@@ -98,7 +98,7 @@ export function ApiKeySettings() {
           <p className="mt-1 text-sm">
             <a
               className="link link-primary"
-              href="https://openseo.so/docs/mcp"
+              href="https://seomachine.ir/docs/mcp"
               target="_blank"
               rel="noreferrer"
             >

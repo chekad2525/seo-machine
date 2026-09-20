@@ -14,7 +14,7 @@ export function CompactAgentPrompt({
   onBack: () => void;
   onFinish: () => void;
 }) {
-  const prompt = getAgentSetupPrompt("https://app.openseo.so");
+  const prompt = getAgentSetupPrompt("https://app.seomachine.ir");
   const copy = (
     <div className="[&>button]:h-11 [&>button]:w-full [&>button]:gap-2 [&>button]:text-sm">
       <CopyButton
@@ -27,7 +27,7 @@ export function CompactAgentPrompt({
   );
   const manual = (
     <a
-      href="https://openseo.so/docs/mcp"
+      href="https://seomachine.ir/docs/mcp"
       target="_blank"
       rel="noreferrer"
       className="text-xs text-base-content/60 underline decoration-base-content/25 underline-offset-4 hover:text-base-content"

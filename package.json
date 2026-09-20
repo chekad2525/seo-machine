@@ -16,6 +16,7 @@
     "deploy": "npm run db:migrate:prod && npm run build && wrangler deploy -c dist/open_seo_audit/wrangler.json && wrangler deploy",
     "deploy:selfhost": "node scripts/selfhost-deploy-preflight.mjs && vite build --mode selfhost && tsc --noEmit && pnpm alchemy deploy --env-file .env.selfhost --stage selfhost",
     "deploy:postgres": "npm run db:migrate:pg && npm run build && pnpm alchemy deploy --env-file .env.production --stage hosted-prod --adopt",
+    "deploy:seomachine": "node scripts/seomachine-deploy-preflight.mjs && vite build --mode seomachine --configLoader runner && tsc --noEmit && npm --prefix web run build:seomachine && pnpm alchemy deploy --env-file .env.seomachine --stage seomachine-prod",
     "deploy:preview": "vite build --mode preview && pnpm alchemy deploy --env-file .env.preview",
     "preview:access": "pnpm alchemy deploy alchemy.preview-access.run.ts --env-file .env.preview --stage preview-access --adopt",
     "alchemy": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-strip-types\" alchemy",

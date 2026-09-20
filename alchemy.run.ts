@@ -79,12 +79,18 @@ const PROD_NAMES = {
   hyperdrive: "openseo",
 } as const;
 
+// SEO Machine is a separate deployment with fresh resources. Never use the
+// upstream hosted-prod adoption path for this account.
+const SEO_MACHINE_STAGE = "seomachine-prod";
+const SEO_MACHINE_APP_DOMAIN = "app.seomachine.ir";
+
 const makeResources = (stage: string) => {
   const prod = stage === HOSTED_PROD_STAGE;
+  const retainData = prod || stage === SEO_MACHINE_STAGE;
   // Prod adopts the LIVE resources; retain makes `alchemy destroy --stage
   // hosted-prod` (or an orphaning refactor) forget state instead of deleting
   // them.
-  const keep = Alchemy.RemovalPolicy.retain(prod);
+  const keep = Alchemy.RemovalPolicy.retain(retainData);
   return {
     DB: Cloudflare.D1.Database("DB", {
       name: prod ? PROD_NAMES.d1 : `open-seo-db-${stage}`,
@@ -307,6 +313,7 @@ export default Alchemy.Stack(
   Effect.gen(function* () {
     const stage = yield* Alchemy.Stage;
     const prod = stage === HOSTED_PROD_STAGE;
+    const seoMachineProd = stage === SEO_MACHINE_STAGE;
     // Fail closed: an unset AUTH_MODE gets the Access-gated mode (matching the
     // app's own default in src/lib/auth-mode.ts), never public hosted signup.
     // hosted/local_noauth must be set explicitly.
@@ -316,16 +323,27 @@ export default Alchemy.Stack(
     const databaseProvider = yield* optionalVar("DATABASE_PROVIDER");
     const workersSubdomain = yield* readWorkersSubdomain({ required: false });
 
+    if (
+      seoMachineProd &&
+      (authMode !== "hosted" || databaseProvider !== "d1")
+    ) {
+      return yield* Effect.die(
+        new Error(
+          "SEO Machine production requires AUTH_MODE=hosted and DATABASE_PROVIDER=d1.",
+        ),
+      );
+    }
+
     // Auth needs an absolute BETTER_AUTH_URL. Prod sets it explicitly;
     // previews always derive it from the deterministic worker name — a wrong
     // WORKERS_SUBDOMAIN surfaces in CI's post-deploy Access verify step.
     let authUrl: string;
-    if (prod) {
+    if (prod || seoMachineProd) {
       authUrl = yield* optionalVar("BETTER_AUTH_URL");
       if (!authUrl) {
         return yield* Effect.die(
           new Error(
-            "Set BETTER_AUTH_URL (https://app.openseo.so) in .env.production.",
+            `Set BETTER_AUTH_URL to https://${seoMachineProd ? SEO_MACHINE_APP_DOMAIN : "app.openseo.so"} in the deployment env file.`,
           ),
         );
       }
@@ -335,6 +353,13 @@ export default Alchemy.Stack(
         return yield* Effect.die(
           new Error(
             "Set DATABASE_PROVIDER explicitly in .env.production (prod runs postgres).",
+          ),
+        );
+      }
+      if (seoMachineProd && authUrl !== `https://${SEO_MACHINE_APP_DOMAIN}`) {
+        return yield* Effect.die(
+          new Error(
+            `SEO Machine production requires BETTER_AUTH_URL=https://${SEO_MACHINE_APP_DOMAIN}.`,
           ),
         );
       }
@@ -382,7 +407,7 @@ export default Alchemy.Stack(
       // CPU allowance the app worker used to carry for them. Configurable
       // CPU limits are a paid-plan feature; self-host deploys
       // (cloudflare_access) may run on the free plan, which rejects them.
-      ...(authMode === "cloudflare_access"
+      ...(authMode === "cloudflare_access" || seoMachineProd
         ? {}
         : { limits: { cpuMs: 300_000 } }),
       observability: {
@@ -418,12 +443,16 @@ export default Alchemy.Stack(
           { className: "SiteAuditWorkflow" },
         ),
       },
-    }).pipe(Alchemy.RemovalPolicy.retain(prod));
+    }).pipe(Alchemy.RemovalPolicy.retain(prod || seoMachineProd));
 
     const app = yield* Cloudflare.Worker("open-seo", {
       name: workerName(stage),
       // Prod serves the real domains; the zone is inferred from the hostname.
-      domain: prod ? ["app.openseo.so", "www.app.openseo.so"] : undefined,
+      domain: prod
+        ? ["app.openseo.so", "www.app.openseo.so"]
+        : seoMachineProd
+          ? [SEO_MACHINE_APP_DOMAIN]
+          : undefined,
       // Prebuilt worker from `vite build` (@cloudflare/vite-plugin). The entry
       // exports the DO + WorkflowEntrypoint classes (re-exported by
       // src/server.ts), which `bundle: false` requires. Sibling chunks under
@@ -443,7 +472,7 @@ export default Alchemy.Stack(
       // limits are a paid-plan feature, and self-host deploys
       // (cloudflare_access) may run on the free plan — which rejects them —
       // so those get the plan default instead.
-      ...(authMode === "cloudflare_access"
+      ...(authMode === "cloudflare_access" || seoMachineProd
         ? {}
         : { limits: { cpuMs: 300_000 } }),
       observability: {
@@ -520,8 +549,40 @@ export default Alchemy.Stack(
       // on destroy. (Workflow registrations aren't individually retainable —
       // they're created inside the worker provider — but re-registering them
       // is a lossless upsert, unlike deleting the data-bearing resources.)
-      Alchemy.RemovalPolicy.retain(prod),
+      Alchemy.RemovalPolicy.retain(prod || seoMachineProd),
     );
+
+    if (seoMachineProd) {
+      const websiteCache = Cloudflare.KV.Namespace("WEBSITE_CACHE", {
+        title: "seo-machine-backlink-cache",
+      }).pipe(Alchemy.RemovalPolicy.retain());
+      const website = yield* Cloudflare.Worker("seo-machine-landing", {
+        name: "seo-machine-landing",
+        domain: ["seomachine.ir", "www.seomachine.ir"],
+        main: "./web/dist/server/index.js",
+        bundle: false,
+        assets: { directory: "./web/dist/client" },
+        compatibility: {
+          date: "2026-02-19",
+          flags: ["nodejs_compat"],
+        },
+        observability: { enabled: true },
+        env: {
+          BACKLINK_CHECK_KV: websiteCache,
+          BACKLINK_CHECK_RATE_LIMIT: Cloudflare.RateLimit(
+            "BACKLINK_CHECK_RATE_LIMIT",
+            { namespaceId: 1002, simple: { limit: 5, period: 60 } },
+          ),
+          DATAFORSEO_API_KEY: dataEnv.DATAFORSEO_API_KEY,
+          LOOPS_API_KEY: dataEnv.LOOPS_API_KEY,
+          TURNSTILE_SECRET_KEY: dataEnv.TURNSTILE_SECRET_KEY,
+        },
+      }).pipe(Alchemy.RemovalPolicy.retain());
+      return {
+        appUrl: app.url.as<string>(),
+        siteUrl: website.url.as<string>(),
+      };
+    }
 
     return { url: app.url.as<string>() };
   }),

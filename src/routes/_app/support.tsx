@@ -3,7 +3,7 @@ import { Check, Copy } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
-const SUPPORT_EMAIL = "ben@openseo.so";
+const SUPPORT_EMAIL = import.meta.env.VITE_SUPPORT_EMAIL || "seomachine@info.ir";
 const DISCORD_URL = "https://discord.gg/c9uGs3cFXr";
 const GITHUB_URL = "https://github.com/every-app/open-seo";
 

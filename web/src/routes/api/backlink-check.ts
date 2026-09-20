@@ -215,7 +215,7 @@ export const Route = createFileRoute("/api/backlink-check")({
         // Per-colo cache so repeat checks of the same domain don't re-bill.
         const cache = (caches as unknown as { default: Cache }).default;
         const cacheKey = new Request(
-          `https://openseo.so/api/backlink-check/${domain}`,
+          `https://seomachine.ir/api/backlink-check/${domain}`,
         );
         const cached = await cache.match(cacheKey);
         if (cached) return cached;

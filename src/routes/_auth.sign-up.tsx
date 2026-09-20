@@ -169,7 +169,7 @@ function SignUpPage() {
               <p className="text-sm leading-relaxed text-base-content/60">
                 By signing up, you agree to our{" "}
                 <a
-                  href="https://openseo.so/terms-and-conditions"
+                  href="https://seomachine.ir/terms-and-conditions"
                   target="_blank"
                   rel="noreferrer"
                   className="text-base-content underline underline-offset-2 hover:text-base-content/80 transition-colors"
@@ -178,7 +178,7 @@ function SignUpPage() {
                 </a>{" "}
                 and{" "}
                 <a
-                  href="https://openseo.so/privacy"
+                  href="https://seomachine.ir/privacy"
                   target="_blank"
                   rel="noreferrer"
                   className="text-base-content underline underline-offset-2 hover:text-base-content/80 transition-colors"

@@ -56,7 +56,7 @@ function OpenSourceSeoCta() {
       </p>
       <div className="mt-5 flex flex-col gap-3 sm:flex-row">
         <a
-          href="https://app.openseo.so/sign-up"
+          href="https://app.seomachine.ir/sign-up"
           className="inline-flex h-10 items-center justify-center rounded-lg bg-neutral-950 px-4 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
         >
           Try OpenSEO

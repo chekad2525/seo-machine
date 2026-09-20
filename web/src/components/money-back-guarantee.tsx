@@ -1,5 +1,4 @@
-const REFUND_PROMISE =
-  "Not for you yet? Email ben@openseo.so within 30 days of your charge and we'll refund your subscription.";
+const REFUND_PROMISE = `Not for you yet? Email ${import.meta.env.VITE_SUPPORT_EMAIL || "seomachine@info.ir"} within 30 days of your charge and we'll refund your subscription.`;
 
 // Hover/focus tooltip (tabIndex makes it work on tap too). The full refund
 // terms also live in the pricing FAQ, so the tooltip is reinforcement, not

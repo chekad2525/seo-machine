@@ -181,14 +181,14 @@ export function SignupPreview({
             </div>
             <CopyButton
               primary
-              value={getAgentSetupPrompt("https://app.openseo.so")}
+              value={getAgentSetupPrompt("https://app.seomachine.ir")}
               label="Copy setup prompt"
               successMessage="Setup prompt copied"
             />
           </div>
           <div className="flex flex-wrap items-center justify-between gap-4 border-t border-base-300 pt-6">
             <a
-              href="https://openseo.so/docs/mcp"
+              href="https://seomachine.ir/docs/mcp"
               target="_blank"
               rel="noreferrer"
               className="text-sm text-base-content/60 underline underline-offset-4 hover:text-base-content"

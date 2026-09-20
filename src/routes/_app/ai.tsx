@@ -16,8 +16,8 @@ import {
   OpenClawIcon,
 } from "@/client/features/ai-mcp/AgentIcons";
 
-const DOCS_URL = "https://openseo.so/docs/agent-setup";
-const COACH_DOCS_URL = "https://openseo.so/docs/skills/seo-coach";
+const DOCS_URL = "https://seomachine.ir/docs/agent-setup";
+const COACH_DOCS_URL = "https://seomachine.ir/docs/skills/seo-coach";
 const SKILLS = [
   ["seo-coach", "Explains where you stand and picks your next step."],
   [
@@ -54,7 +54,7 @@ export const Route = createFileRoute("/_app/ai")({
 function AiPage() {
   const origin =
     typeof window === "undefined"
-      ? "https://app.openseo.so"
+      ? "https://app.seomachine.ir"
       : window.location.origin;
   const mcpUrl = `${origin}/mcp`;
   const prompt = getAgentSetupPrompt(origin);
@@ -181,7 +181,7 @@ function AiPage() {
                   connect until Managed OAuth is enabled on your Access
                   application.{" "}
                   <a
-                    href="https://openseo.so/docs/self-hosting/cloudflare#connect-the-mcp-server-through-cloudflare-access"
+                    href="https://seomachine.ir/docs/self-hosting/cloudflare#connect-the-mcp-server-through-cloudflare-access"
                     target="_blank"
                     rel="noreferrer"
                     className="link font-medium"
@@ -217,7 +217,7 @@ function AiPage() {
                   className="flex flex-col gap-0.5 sm:flex-row sm:gap-3"
                 >
                   <a
-                    href={`https://openseo.so/docs/skills/${name}`}
+                    href={`https://seomachine.ir/docs/skills/${name}`}
                     target="_blank"
                     rel="noreferrer"
                     className="shrink-0 font-mono text-[13px] text-base-content underline decoration-base-content/25 underline-offset-4 hover:decoration-base-content sm:w-48"

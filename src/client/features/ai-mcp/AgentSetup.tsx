@@ -20,7 +20,7 @@ export function AgentSetup({
   const [intent, setIntent] = useState(initialIntent ?? "");
   const prompt = getAgentSetupPrompt(
     typeof window === "undefined"
-      ? "https://app.openseo.so"
+      ? "https://app.seomachine.ir"
       : window.location.origin,
   );
   const Heading = onComplete ? "h1" : "h2";

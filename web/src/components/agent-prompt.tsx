@@ -7,7 +7,7 @@ import {
 export function AgentPrompt({ kind }: { kind: "setup" | "update" }) {
   const prompt =
     kind === "setup"
-      ? getAgentSetupPrompt("https://app.openseo.so")
+      ? getAgentSetupPrompt("https://app.seomachine.ir")
       : agentUpdatePrompt;
 
   return (

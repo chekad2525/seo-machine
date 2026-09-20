@@ -83,7 +83,7 @@ export function DashboardSetupAction({
               primary
               value={getAgentSetupPrompt(
                 typeof window === "undefined"
-                  ? "https://app.openseo.so"
+                  ? "https://app.seomachine.ir"
                   : window.location.origin,
               )}
               label="Copy setup prompt"
@@ -97,7 +97,7 @@ export function DashboardSetupAction({
           </div>
         </div>
         <a
-          href="https://openseo.so/docs/mcp"
+          href="https://seomachine.ir/docs/mcp"
           target="_blank"
           rel="noreferrer"
           className="inline-block text-xs text-base-content/60 underline decoration-base-content/25 underline-offset-4 hover:text-base-content"

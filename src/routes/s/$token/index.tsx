@@ -11,10 +11,10 @@ import { loadSharePage } from "@/server/features/reports/sharePage";
 // that endpoint bounces anyone who opens it top-level back here, so shared
 // content always carries this chrome.
 
-const MARKETING_URL = "https://openseo.so/?utm_source=shared_report";
+const MARKETING_URL = "https://seomachine.ir/?utm_source=shared_report";
 // The marketing site's card. Absolute because a link preview crawler resolves
 // og:image against nothing, and the app domain does not serve this asset.
-const SOCIAL_CARD_URL = "https://openseo.so/social-card.jpg";
+const SOCIAL_CARD_URL = "https://seomachine.ir/social-card.jpg";
 
 // The share sheet on touch devices only; on desktop macOS anchors it to the
 // window rather than the button, so the clipboard is used instead.

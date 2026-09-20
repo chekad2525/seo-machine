@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite dev",
     "build": "vite build && node scripts/generate-sitemap.js",
+    "build:seomachine": "vite build --mode seomachine --configLoader runner && node scripts/generate-sitemap.js",
     "build:app": "vite build",
     "sitemap": "node scripts/generate-sitemap.js",
     "start": "wrangler dev",

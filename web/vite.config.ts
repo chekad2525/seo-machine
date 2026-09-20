@@ -16,7 +16,7 @@ if (typeof transformMdx === "function") {
   };
 }
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   server: {
     port: 4322,
   },
@@ -36,10 +36,12 @@ export default defineConfig({
     }),
     tanstackStart({
       prerender: {
-        enabled: true,
+        // The SEO Machine Worker renders routes on request. Its deployment
+        // build does not need a local workerd prerender crawl.
+        enabled: mode !== "seomachine",
         filter: ({ path }) => !/\.pdf(?:[?#]|$)/i.test(path),
       },
     }),
     react(),
   ],
-});
+}));
