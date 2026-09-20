@@ -1,0 +1,17 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/gsc/prepare/route": "app/api/gsc/prepare/route.js",
+  "/api/gsc/sync/route": "app/api/gsc/sync/route.js",
+  "/api/keywords/route": "app/api/keywords/route.js",
+  "/api/setup/route": "app/api/setup/route.js",
+  "/llms.txt/route": "app/llms.txt/route.js",
+  "/robots.txt/route": "app/robots.txt/route.js",
+  "/sitemap.xml/route": "app/sitemap.xml/route.js",
+  "/api/auth/[...nextauth]/route": "app/api/auth/[...nextauth]/route.js",
+  "/analytics/page": "app/analytics/page.js",
+  "/keywords/page": "app/keywords/page.js",
+  "/onboarding/page": "app/onboarding/page.js",
+  "/sign-in/page": "app/sign-in/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/page": "app/page.js"
+}
