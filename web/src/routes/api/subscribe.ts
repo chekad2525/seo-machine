@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { env } from "cloudflare:workers";
 import { z } from "zod";
+import { getRuntimeEnv } from "@/lib/runtime-env";
 
 const subscribeSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -10,6 +10,7 @@ export const Route = createFileRoute("/api/subscribe")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        const env = await getRuntimeEnv();
         const body = await request.json();
         const parsed = subscribeSchema.safeParse(body);
 

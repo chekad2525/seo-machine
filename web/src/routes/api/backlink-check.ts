@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { env } from "cloudflare:workers";
 import { z } from "zod";
+import { getRuntimeEnv } from "@/lib/runtime-env";
 
 const DATAFORSEO_BASE = "https://api.dataforseo.com";
 const TOP_BACKLINKS_LIMIT = 15;
@@ -145,6 +145,7 @@ export const Route = createFileRoute("/api/backlink-check")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        const env = await getRuntimeEnv();
         const body = await request.json().catch(() => null);
         const parsed = requestSchema.safeParse(body);
         if (!parsed.success) {
@@ -213,11 +214,15 @@ export const Route = createFileRoute("/api/backlink-check")({
         }
 
         // Per-colo cache so repeat checks of the same domain don't re-bill.
-        const cache = (caches as unknown as { default: Cache }).default;
+        const cache = (
+          globalThis as typeof globalThis & {
+            caches?: { default?: Cache };
+          }
+        ).caches?.default;
         const cacheKey = new Request(
           `https://seomachine.ir/api/backlink-check/${domain}`,
         );
-        const cached = await cache.match(cacheKey);
+        const cached = await cache?.match(cacheKey);
         if (cached) return cached;
 
         // Global daily budget. Best-effort: KV reads are edge-cached and the
@@ -309,7 +314,7 @@ export const Route = createFileRoute("/api/backlink-check")({
             200,
             { "Cache-Control": `public, max-age=${CACHE_TTL_SECONDS}` },
           );
-          await cache.put(cacheKey, response.clone());
+          await cache?.put(cacheKey, response.clone());
           return response;
         } catch (err) {
           console.error("Backlink check error:", err);
@@ -321,7 +326,7 @@ export const Route = createFileRoute("/api/backlink-check")({
             502,
             { "Cache-Control": "public, max-age=120" },
           );
-          await cache.put(cacheKey, response.clone()).catch(() => {});
+          await cache?.put(cacheKey, response.clone()).catch(() => {});
           return response;
         }
       },

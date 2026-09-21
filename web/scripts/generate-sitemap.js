@@ -8,12 +8,14 @@ import { FEATURE_PAGE_SLUGS } from "../src/lib/feature-page-slugs.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const DIST_DIR = join(__dirname, "../dist/client");
+const DIST_DIR = process.argv.includes("--vercel")
+  ? join(__dirname, "../.vercel/output/static")
+  : join(__dirname, "../dist/client");
 const BLOG_CONTENT_DIR = join(__dirname, "../content/blogs");
 const DOCS_CONTENT_DIR = join(__dirname, "../content/docs");
 const LIBRARY_ROUTES_DIR = join(__dirname, "../src/routes/_marketing/library");
 
-const DEFAULT_SITE_URL = "https://openseo.so";
+const DEFAULT_SITE_URL = "https://seomachine.ir";
 const SITE_URL = (process.env.SITE_URL ?? DEFAULT_SITE_URL).replace(/\/+$/, "");
 
 const STATIC_PATHS = [
