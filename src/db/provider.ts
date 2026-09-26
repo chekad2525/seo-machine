@@ -1,8 +1,11 @@
 import { env } from "cloudflare:workers";
+import { getVercelPostgresUrl } from "./vercel-connection";
 
 type DatabaseProvider = "d1" | "postgres";
 
 export function getDatabaseProvider(): DatabaseProvider {
+  if (process.env.VERCEL === "1") return "postgres";
+
   const provider = Reflect.get(env, "DATABASE_PROVIDER");
 
   if (provider === "postgres") {
@@ -23,6 +26,14 @@ export function getDatabaseProvider(): DatabaseProvider {
 // `localConnectionString` from wrangler.jsonc (miniflare never contacts real
 // Hyperdrive), so the same code path covers both.
 export function getPostgresConnectionString() {
+  if (process.env.VERCEL === "1") {
+    const databaseUrl = process.env.DATABASE_URL?.trim();
+    if (databaseUrl) return getVercelPostgresUrl(databaseUrl);
+    throw new Error(
+      "DATABASE_PROVIDER=postgres requires DATABASE_URL on Vercel",
+    );
+  }
+
   const hyperdrive = Reflect.get(env, "HYPERDRIVE") as
     | { connectionString?: string }
     | undefined;
