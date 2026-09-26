@@ -1,4 +1,3 @@
-import { appUrl } from "@/lib/app-url";
 import { createFileRoute } from "@tanstack/react-router";
 import { buildBreadcrumbJsonLd, buildPageSeo } from "@/lib/seo";
 import { aiAgentSeoStrategies } from "@/lib/strategy-libraries";
@@ -294,7 +293,7 @@ function AiAgentSeoLibraryPage() {
           </p>
         </div>
         <a
-          href={appUrl("/sign-up")}
+          href="https://app.seomachine.ir/sign-up"
           className="inline-flex h-11 shrink-0 items-center justify-center rounded-lg bg-neutral-950 px-5 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
         >
           Start with OpenSEO

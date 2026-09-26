@@ -1,4 +1,3 @@
-import { appUrl } from "@/lib/app-url";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { buildPageSeo } from "@/lib/seo";
@@ -231,7 +230,7 @@ function Pricing() {
         </ul>
         <div className="mt-6 flex items-center gap-4">
           <a
-            href={appUrl("/sign-up")}
+            href="https://app.seomachine.ir/sign-up"
             className="inline-flex items-center justify-center rounded-lg bg-neutral-950 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
           >
             Get Started
