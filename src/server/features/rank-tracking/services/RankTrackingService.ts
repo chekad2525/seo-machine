@@ -34,6 +34,7 @@ import {
 import { getLatestResults } from "./rankTrackingResults";
 import { toSqliteTimestamp } from "@/server/features/rank-tracking/rankTrackingTimestamps";
 import { RankTrackingKeywordService } from "./RankTrackingKeywordService";
+import { beginVercelRankCheck } from "./vercelRankCheck";
 
 // ---------------------------------------------------------------------------
 // Config
@@ -243,6 +244,16 @@ async function triggerCheck(input: {
     }
   }
 
+  if (process.env.VERCEL === "1") {
+    return beginVercelRankCheck({
+      config,
+      projectId: input.projectId,
+      billingCustomer: input.billingCustomer,
+      keywords,
+      keywordIds: input.keywordIds,
+    });
+  }
+
   return beginRankCheckRun({
     workflow: env.RANK_CHECK_WORKFLOW,
     config,
@@ -271,6 +282,12 @@ async function getLatestRun(configId: string, projectId: string) {
   // mark a stale blocker as failed before retrying its insert. Mutating from
   // this read path caused a race where the original workflow kept running
   // while a replacement was started.
+  if (process.env.VERCEL === "1") {
+    return formatRun(run, run.status === "pending" || run.status === "running"
+      ? { maybeStale: Date.now() - new Date(run.startedAt).getTime() > 10 * 60 * 1000, staleReason: "Vercel rank check may have timed out" }
+      : undefined);
+  }
+
   const reconciliation = await reconcileActiveRankCheckRun(run);
   if (reconciliation) {
     return formatRun(run, {
