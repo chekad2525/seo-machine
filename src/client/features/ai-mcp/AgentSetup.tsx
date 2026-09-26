@@ -35,12 +35,14 @@ export function AgentSetup({
     <fieldset disabled={disabled}>
       <div className="mb-8">
         <Heading className="text-2xl font-semibold tracking-tight">
-          {intent === "yes" ? "Set up your agent" : "Already use an AI agent?"}
+          {intent === "yes"
+            ? "عامل خود را راه‌اندازی کنید"
+            : "از عامل هوش مصنوعی استفاده می‌کنید؟"}
         </Heading>
         <p className="mt-3 text-pretty text-sm leading-relaxed text-base-content/60">
           {intent === "yes"
             ? AGENT_SETUP_DESCRIPTION
-            : "Like Claude, ChatGPT Desktop, or Grok Bot."}
+            : "مانند Claude، نسخه دسکتاپ ChatGPT یا Grok Bot."}
         </p>
       </div>
       {intent === "yes" ? (
@@ -55,7 +57,7 @@ export function AgentSetup({
               className="flex min-h-10 items-center gap-1.5 text-xs text-base-content/60 hover:text-base-content"
               onClick={() => setIntent("")}
             >
-              <ArrowLeft className="size-3.5" /> Back
+              <ArrowRight className="size-3.5" /> بازگشت
             </button>
             {onComplete && (
               <button
@@ -63,7 +65,7 @@ export function AgentSetup({
                 className="btn btn-ghost btn-sm gap-2"
                 onClick={() => onComplete("yes")}
               >
-                Go to dashboard <ArrowRight className="size-4" />
+                رفتن به داشبورد <ArrowLeft className="size-4" />
               </button>
             )}
           </div>
@@ -77,7 +79,7 @@ export function AgentSetup({
                 className="flex min-h-10 items-center gap-1.5 text-xs text-base-content/60 hover:text-base-content"
                 onClick={onBack}
               >
-                <ArrowLeft className="size-3.5" /> Back
+                <ArrowRight className="size-3.5" /> بازگشت
               </button>
             )}
             <div className="ml-auto flex gap-3">
@@ -87,21 +89,21 @@ export function AgentSetup({
                 aria-pressed={onComplete ? undefined : intent === "no"}
                 onClick={() => chooseIntent("no")}
               >
-                No
+                خیر
               </button>
               <button
                 type="button"
                 className="btn btn-primary min-w-24"
                 onClick={() => chooseIntent("yes")}
               >
-                Yes <ArrowRight className="size-4" />
+                بله <ArrowLeft className="size-4" />
               </button>
             </div>
           </div>
           {intent === "no" && (
             <p className="mt-4 text-sm text-base-content/60">
-              You can use the dashboard on its own and connect an agent anytime
-              from Agent setup.
+              می‌توانید از داشبورد به‌تنهایی استفاده کنید و هر زمان خواستید از
+              بخش راه‌اندازی عامل، یک عامل متصل کنید.
             </p>
           )}
         </>

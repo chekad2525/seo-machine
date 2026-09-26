@@ -57,8 +57,8 @@ export function PostSignupOnboarding({
         <fieldset disabled={isSaving}>
           {step === 0 ? (
             <OnboardingChoiceGroup
-              title="What brings you here?"
-              description="Pick up to three things you want to work on."
+              title="برای چه کاری به اینجا آمده‌اید؟"
+              description="حداکثر سه مورد را انتخاب کنید."
               maxSelections={3}
               options={[...INTEREST_OPTIONS]}
               selectedValues={answers.selectedInterests}
@@ -77,7 +77,7 @@ export function PostSignupOnboarding({
             />
           ) : step === 1 ? (
             <OnboardingChoiceGroup
-              title="Who are you doing SEO for?"
+              title="سئو را برای چه کسی انجام می‌دهید؟"
               options={[...WORK_FOR_OPTIONS]}
               selectedValues={answers.workFor ? [answers.workFor] : []}
               onToggle={(workFor) => updateAnswers({ workFor })}
@@ -85,7 +85,7 @@ export function PostSignupOnboarding({
               onOtherChange={(workForOther) => updateAnswers({ workForOther })}
               followUp={{
                 showForValue: CLIENT_WORK_FOR,
-                label: "About how many client sites do you work on?",
+                label: "تقریباً روی چند سایت مشتری کار می‌کنید؟",
                 options: [...CLIENT_WEBSITE_COUNT_OPTIONS],
                 value: answers.clientWebsiteCount,
                 onChange: (clientWebsiteCount) =>
@@ -94,7 +94,7 @@ export function PostSignupOnboarding({
             />
           ) : step === 2 ? (
             <OnboardingChoiceGroup
-              title="How did you find OpenSEO?"
+              title="چطور با OpenSEO آشنا شدید؟"
               options={[...SOURCE_OPTIONS]}
               selectedValues={answers.source ? [answers.source] : []}
               onToggle={(source) => updateAnswers({ source })}
@@ -123,7 +123,7 @@ export function PostSignupOnboarding({
                   className="flex min-h-10 items-center gap-1.5 text-xs text-base-content/60 hover:text-base-content"
                   onClick={onBack}
                 >
-                  <ArrowLeft className="size-3.5" /> Back
+                  <ArrowRight className="size-3.5" /> بازگشت
                 </button>
               ) : (
                 <button
@@ -131,7 +131,7 @@ export function PostSignupOnboarding({
                   className="btn btn-ghost"
                   onClick={onSkip}
                 >
-                  Skip
+                  رد کردن
                 </button>
               )}
               <div className="flex items-center gap-2">
@@ -141,7 +141,7 @@ export function PostSignupOnboarding({
                     className="btn btn-ghost btn-sm text-base-content/55"
                     onClick={onSkip}
                   >
-                    Skip
+                    رد کردن
                   </button>
                 )}
                 <button
@@ -150,7 +150,7 @@ export function PostSignupOnboarding({
                   disabled={!canContinue || isSaving}
                   onClick={onNext}
                 >
-                  Continue <ArrowRight className="size-4" />
+                  ادامه <ArrowLeft className="size-4" />
                 </button>
               </div>
             </div>
@@ -275,8 +275,10 @@ function OnboardingChoiceGroup({
         <input
           type="text"
           className="input input-bordered mt-4 w-full"
-          aria-label={multiple ? "Other tasks" : "Other answer"}
-          placeholder={multiple ? "Tell us what else..." : "Tell us more..."}
+          aria-label={multiple ? "موارد دیگر" : "پاسخ دیگر"}
+          placeholder={
+            multiple ? "موارد دیگر را بنویسید..." : "بیشتر توضیح دهید..."
+          }
           value={otherValue}
           onChange={(event) => onOtherChange(event.target.value)}
         />

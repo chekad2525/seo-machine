@@ -32,14 +32,14 @@ export const Route = createFileRoute("/verify-email")({
 function getVerificationErrorMessage(error: string | undefined) {
   switch ((error ?? "").toLowerCase()) {
     case "invalid_token":
-      return "This link is no longer valid. Request a new email to keep going.";
+      return "این پیوند دیگر معتبر نیست. یک ایمیل تازه درخواست کنید.";
     case "token_expired":
-      return "This link has expired. Request a new email to keep going.";
+      return "این پیوند منقضی شده است. یک ایمیل تازه درخواست کنید.";
     case "user_not_found":
-      return "We couldn't find this account anymore. Try creating it again.";
+      return "این حساب پیدا نشد. دوباره آن را بسازید.";
     default:
       return error
-        ? "We couldn't confirm this email. Request a new email and try again."
+        ? "تأیید این ایمیل ممکن نشد. یک ایمیل تازه درخواست کنید."
         : null;
   }
 }
@@ -59,29 +59,29 @@ function getVerifyEmailPageCopy({
 }) {
   if (!isHostedMode) {
     return {
-      title: "Verify email",
-      helperText: "Email confirmation isn't available right now.",
+      title: "تأیید ایمیل",
+      helperText: "تأیید ایمیل اکنون در دسترس نیست.",
     };
   }
 
   if (errorMessage) {
     return {
-      title: "We couldn't confirm your email",
+      title: "تأیید ایمیل انجام نشد",
       helperText: errorMessage,
     };
   }
 
   if (isRedirecting) {
     return {
-      title: "Email confirmed",
-      helperText: "You're all set. Taking you to your account now.",
+      title: "ایمیل تأیید شد",
+      helperText: "همه‌چیز آماده است؛ در حال انتقال به حساب شما هستیم.",
     };
   }
 
   if (isPending) {
     return {
-      title: "Verify email",
-      helperText: "Checking your email confirmation.",
+      title: "تأیید ایمیل",
+      helperText: "در حال بررسی تأیید ایمیل...",
     };
   }
 
@@ -90,10 +90,10 @@ function getVerifyEmailPageCopy({
   // unverified hosted user would be bounced straight back by the verification
   // gate.
   return {
-    title: "Verify your email",
+    title: "ایمیل خود را تأیید کنید",
     helperText: email
-      ? `Click the link we sent to ${email} to verify your email.`
-      : "Check your inbox for the link to verify your email.",
+      ? `برای تأیید ایمیل، پیوند ارسال‌شده به ${email} را باز کنید.`
+      : "صندوق ورودی خود را برای پیوند تأیید ایمیل بررسی کنید.",
   };
 }
 
@@ -172,14 +172,14 @@ function VerifyEmailPage() {
         callbackURL: callbackURL.toString(),
       });
       if (result.error) {
-        toast.error(result.error.message || "We couldn't send another email.");
+        toast.error(result.error.message || "ارسال دوباره ایمیل ممکن نشد.");
         return;
       }
       captureClientEvent("auth:verification_resend");
-      toast.success("A new email is on the way.");
+      toast.success("ایمیل تازه ارسال شد.");
     } catch {
       toast.error(
-        "We couldn't send another email right now. Please try again.",
+        "در حال حاضر ارسال دوباره ایمیل ممکن نیست. دوباره تلاش کنید.",
       );
     } finally {
       setIsResending(false);
@@ -198,7 +198,7 @@ function VerifyEmailPage() {
               search={getSignInSearch(redirectTo)}
               className="text-base-content/50 hover:text-base-content transition-colors"
             >
-              Back to sign in
+              بازگشت به ورود
             </Link>
           </p>
         }
@@ -213,7 +213,7 @@ function VerifyEmailPage() {
               search={getSignInSearch(redirectTo)}
               className="btn btn-soft w-full"
             >
-              Back to sign in
+              بازگشت به ورود
             </Link>
           </div>
         ) : isPending || isRedirecting ? (
@@ -227,7 +227,7 @@ function VerifyEmailPage() {
             onClick={() => void handleResend()}
             disabled={isResending}
           >
-            {isResending ? "Sending email..." : "Resend email"}
+            {isResending ? "در حال ارسال ایمیل..." : "ارسال دوباره ایمیل"}
           </button>
         ) : null}
       </AuthPageCard>

@@ -5,10 +5,11 @@ import {
   ensureSharedWorkspaceOrganization,
 } from "@/server/auth/delegated-organization";
 import { eq } from "drizzle-orm";
+import { getOptionalEnvValue } from "@/server/lib/runtime-env";
 import type { EnsuredUserContext } from "./types";
 
 const LOCAL_ADMIN_USER_ID = "local-admin";
-const LOCAL_ADMIN_EMAIL = "admin@localhost";
+const DEFAULT_LOCAL_ADMIN_EMAIL = "admin@localhost";
 
 // Externally-authenticated users (Cloudflare Access, local_noauth) are stored
 // in better-auth's `user` table just like hosted users — only the way we
@@ -99,5 +100,11 @@ export async function resolveSharedWorkspaceContext(
 }
 
 export async function resolveLocalNoAuthContext(): Promise<EnsuredUserContext> {
-  return resolveDelegatedContext(LOCAL_ADMIN_USER_ID, LOCAL_ADMIN_EMAIL);
+  const configuredEmail = (
+    await getOptionalEnvValue("LOCAL_ADMIN_EMAIL")
+  )?.trim();
+  return resolveDelegatedContext(
+    LOCAL_ADMIN_USER_ID,
+    configuredEmail || DEFAULT_LOCAL_ADMIN_EMAIL,
+  );
 }

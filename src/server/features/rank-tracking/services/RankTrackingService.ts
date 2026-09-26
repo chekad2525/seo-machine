@@ -8,7 +8,7 @@ import {
   fetchKeywordMetricsForList,
 } from "@/server/lib/dataforseo";
 import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
-import { assertSerpLocationNameAccepted } from "@/server/lib/dataforseo/serp-location-validate";
+import { assertSerpApiLocationAccepted } from "@/server/lib/serpapi/locations";
 import { AppError } from "@/server/lib/errors";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import type {
@@ -65,9 +65,8 @@ async function createConfig(input: {
   // Before the duplicate/limit checks so an unusable location name is the
   // error the caller sees.
   if (locationName) {
-    await assertSerpLocationNameAccepted({
+    await assertSerpApiLocationAccepted({
       locationName,
-      languageCode,
       countryCode: getIsoCountryCode(locationCode),
     });
   }
@@ -173,9 +172,8 @@ async function updateConfig(
         ? existing.locationName
         : input.locationName;
     if (locationName) {
-      await assertSerpLocationNameAccepted({
+      await assertSerpApiLocationAccepted({
         locationName,
-        languageCode: input.languageCode ?? existing.languageCode,
         countryCode: getIsoCountryCode(
           input.locationCode ?? existing.locationCode,
         ),

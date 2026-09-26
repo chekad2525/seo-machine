@@ -109,7 +109,8 @@ backend for installs that outgrow D1 — see
 ## Auth Modes
 
 - `AUTH_MODE=cloudflare_access` (default): validates Cloudflare Access JWTs (`cf-access-jwt-assertion`) using `TEAM_DOMAIN` + `POLICY_AUD`.
-- `AUTH_MODE=local_noauth`: local trusted mode, no auth check, injects `admin@localhost`.
+- `AUTH_MODE=local_noauth`: local trusted mode, no auth check, injects the
+  `LOCAL_ADMIN_EMAIL` identity (defaults to `admin@localhost`).
 - `AUTH_MODE=hosted`: Better Auth-backed email/password mode. Requires Better Auth schema generation plus `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL`.
 
 Dev scripts do not set `AUTH_MODE`, so you can test another mode by changing it in `.env.local`.

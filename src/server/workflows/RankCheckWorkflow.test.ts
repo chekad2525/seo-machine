@@ -13,7 +13,7 @@ const mocks = vi.hoisted(() => ({
   updateConfig: vi.fn(),
   getSnapshotsForRun: vi.fn(),
   autumnCheck: vi.fn(),
-  createDataforseoClient: vi.fn(),
+  createRankTrackingClient: vi.fn(),
   runLiveCheck: vi.fn(),
   failRunIfActive: vi.fn(),
   captureServerEvent: vi.fn(),
@@ -36,7 +36,6 @@ vi.mock("@/server/features/rank-tracking/services/rankCheckRunGuards", () => ({
 }));
 vi.mock("@/server/workflows/rankCheckPaths", () => ({
   runLiveCheck: mocks.runLiveCheck,
-  runQueuedCheck: vi.fn(),
 }));
 vi.mock("@/server/workflows/pgStep", () => ({
   pgStep: (
@@ -46,8 +45,8 @@ vi.mock("@/server/workflows/pgStep", () => ({
     fn: () => unknown,
   ) => fn(),
 }));
-vi.mock("@/server/lib/dataforseo", () => ({
-  createDataforseoClient: mocks.createDataforseoClient,
+vi.mock("@/server/lib/serpapi/client", () => ({
+  createRankTrackingClient: mocks.createRankTrackingClient,
 }));
 vi.mock("@/server/lib/posthog", () => ({
   captureServerEvent: mocks.captureServerEvent,
@@ -79,7 +78,7 @@ describe("rank check workflow credit ceiling", () => {
     mocks.autumnCheck.mockResolvedValue({ balance: { remaining: 1_000 } });
   });
 
-  it("rejects a keyword-list race before balance or DataForSEO calls", async () => {
+  it("rejects a keyword-list race before balance or provider calls", async () => {
     mocks.getConfigById.mockResolvedValue({ isActive: true });
     mocks.getKeywordsForConfig.mockResolvedValue(
       Array.from({ length: 5 }, (_, index) => ({
@@ -106,7 +105,7 @@ describe("rank check workflow credit ceiling", () => {
             devices: "desktop",
             serpDepth: 10,
             trigger: "manual",
-            maxCostCredits: 12,
+            maxCostCredits: 159,
           },
         },
         // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- workflow steps are executed directly by the pgStep mock
@@ -115,7 +114,7 @@ describe("rank check workflow credit ceiling", () => {
     ).rejects.toMatchObject({ code: "VALIDATION_ERROR" });
 
     expect(mocks.autumnCheck).not.toHaveBeenCalled();
-    expect(mocks.createDataforseoClient).not.toHaveBeenCalled();
+    expect(mocks.createRankTrackingClient).not.toHaveBeenCalled();
     expect(mocks.runLiveCheck).not.toHaveBeenCalled();
   });
 
@@ -134,7 +133,7 @@ describe("rank check workflow credit ceiling", () => {
       devices: "desktop",
       serpDepth: 10,
       trigger: "manual",
-      maxCostCredits: 12,
+      maxCostCredits: 128,
     });
 
     expect(result.keywords).toHaveLength(4);

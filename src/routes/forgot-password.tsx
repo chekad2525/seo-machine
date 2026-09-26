@@ -12,7 +12,7 @@ import { getSignInSearch, normalizeAuthRedirect } from "@/lib/auth-redirect";
 import { z } from "zod";
 
 const forgotPasswordSchema = z.object({
-  email: z.string().trim().email("Enter a valid email address."),
+  email: z.string().trim().email("یک نشانی ایمیل معتبر وارد کنید."),
 });
 
 export const Route = createFileRoute("/forgot-password")({
@@ -45,7 +45,7 @@ function ForgotPasswordPage() {
         if (result.error) {
           formApi.setErrorMap({
             onSubmit: {
-              form: result.error.message || "We couldn't send the reset email.",
+              form: result.error.message || "ارسال ایمیل بازیابی ممکن نشد.",
               fields: {},
             },
           });
@@ -54,7 +54,7 @@ function ForgotPasswordPage() {
       } catch {
         formApi.setErrorMap({
           onSubmit: {
-            form: "We couldn't send the reset email right now. Please try again.",
+            form: "در حال حاضر ارسال ایمیل بازیابی ممکن نیست. دوباره تلاش کنید.",
             fields: {},
           },
         });
@@ -77,13 +77,13 @@ function ForgotPasswordPage() {
 
           return (
             <AuthPageCard
-              title={isSuccess ? "Check your email" : "Forgot password"}
+              title={isSuccess ? "ایمیل خود را بررسی کنید" : "فراموشی گذرواژه"}
               helperText={
                 isSuccess
-                  ? `If an account exists for ${submittedEmail}, we sent a reset link.`
+                  ? `اگر حسابی برای ${submittedEmail} وجود داشته باشد، پیوند بازیابی ارسال شد.`
                   : isHostedMode
-                    ? "Enter your email and we'll send you a password reset link."
-                    : "Password reset isn't available right now."
+                    ? "ایمیل خود را وارد کنید تا پیوند بازیابی گذرواژه ارسال شود."
+                    : "بازیابی گذرواژه اکنون در دسترس نیست."
               }
               footer={
                 <p className="text-sm">
@@ -92,7 +92,7 @@ function ForgotPasswordPage() {
                     search={getSignInSearch(redirectTo)}
                     className="text-base-content/50 hover:text-base-content transition-colors"
                   >
-                    Back to sign in
+                    بازگشت به ورود
                   </Link>
                 </p>
               }
@@ -100,8 +100,8 @@ function ForgotPasswordPage() {
               {isSuccess ? (
                 <div className="alert alert-success">
                   <span>
-                    If an account exists for that email, you'll receive password
-                    reset instructions shortly.
+                    اگر حسابی برای این ایمیل وجود داشته باشد، راهنمای بازیابی
+                    گذرواژه به‌زودی ارسال می‌شود.
                   </span>
                 </div>
               ) : (
@@ -121,7 +121,7 @@ function ForgotPasswordPage() {
                           <input
                             type="email"
                             className="input input-bordered w-full"
-                            placeholder="Email address..."
+                            placeholder="نشانی ایمیل..."
                             value={field.state.value}
                             onChange={(event) =>
                               field.handleChange(event.target.value)
@@ -145,7 +145,7 @@ function ForgotPasswordPage() {
                     className="btn btn-soft w-full"
                     disabled={!isHostedMode || isSubmitting}
                   >
-                    {isSubmitting ? "Sending reset link..." : "Send reset link"}
+                    {isSubmitting ? "در حال ارسال..." : "ارسال پیوند بازیابی"}
                   </button>
                 </form>
               )}

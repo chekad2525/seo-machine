@@ -22,6 +22,7 @@ declare namespace Cloudflare {
     AUDIT_ENGINE: Service<typeof import("./audit-worker").default>;
 
     AUTH_MODE?: "cloudflare_access" | "local_noauth" | "hosted";
+    LOCAL_ADMIN_EMAIL?: string;
     BYPASS_EMAIL_VERIFICATION?: string;
     TEAM_DOMAIN?: string;
     POLICY_AUD?: string;
@@ -54,6 +55,7 @@ declare namespace Cloudflare {
 
     // DataForSEO API Basic auth value (base64 of login:password)
     DATAFORSEO_API_KEY: string;
+    SERPAPI_API_KEY?: string;
 
     // OpenRouter API key for the SAM in-app chat agent.
     OPENROUTER_API_KEY?: string;
@@ -64,6 +66,7 @@ declare namespace Cloudflare {
 
 interface ImportMetaEnv {
   readonly AUTH_MODE?: "cloudflare_access" | "local_noauth" | "hosted";
+  readonly LOCAL_ADMIN_EMAIL?: string;
   readonly DATABASE_PROVIDER?: "d1" | "postgres";
   readonly BYPASS_EMAIL_VERIFICATION?: string;
   readonly POSTHOG_PUBLIC_KEY?: string;

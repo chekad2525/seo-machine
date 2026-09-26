@@ -1,5 +1,29 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "IRANYekanWeb";
+  src: url("/fonts/iranyekanweb-regular.woff") format("woff");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "IRANYekanWeb";
+  src: url("/fonts/iranyekanweb-medium.woff") format("woff");
+  font-style: normal;
+  font-weight: 500 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "IRANYekanWeb";
+  src: url("/fonts/iranyekanweb-bold.woff") format("woff");
+  font-style: normal;
+  font-weight: 700 900;
+  font-display: swap;
+}
+
 /* Persian presentation keeps the upstream layout and visual tokens intact. */
 html {
   direction: rtl;
@@ -8,7 +32,7 @@ html {
 body {
   direction: rtl;
   text-align: right;
-  font-family: Tahoma, "Segoe UI", sans-serif;
+  font-family: "IRANYekanWeb", Tahoma, "Segoe UI", sans-serif;
 }
 
 code,

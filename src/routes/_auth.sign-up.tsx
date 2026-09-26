@@ -25,21 +25,21 @@ import { z } from "zod";
 const signUpSchema = z
   .object({
     name: z.string().trim(),
-    email: z.string().trim().email("Enter a valid email address."),
+    email: z.string().trim().email("یک نشانی ایمیل معتبر وارد کنید."),
     password: z
       .string()
       .min(
         HOSTED_PASSWORD_MIN_LENGTH,
-        `Password must be at least ${HOSTED_PASSWORD_MIN_LENGTH} characters.`,
+        `گذرواژه باید دست‌کم ${HOSTED_PASSWORD_MIN_LENGTH} نویسه باشد.`,
       )
       .max(
         HOSTED_PASSWORD_MAX_LENGTH,
-        `Password must be at most ${HOSTED_PASSWORD_MAX_LENGTH} characters.`,
+        `گذرواژه باید حداکثر ${HOSTED_PASSWORD_MAX_LENGTH} نویسه باشد.`,
       ),
     confirmPassword: z.string(),
   })
   .refine((value) => value.password === value.confirmPassword, {
-    message: "Passwords do not match.",
+    message: "گذرواژه‌ها یکسان نیستند.",
     path: ["confirmPassword"],
   });
 
@@ -75,7 +75,7 @@ function SignUpPage() {
       if (isTurnstileEnabled && !captchaToken) {
         formApi.setErrorMap({
           onSubmit: {
-            form: "Please complete the captcha to continue.",
+            form: "برای ادامه، کپچا را تکمیل کنید.",
             fields: {},
           },
         });
@@ -121,7 +121,7 @@ function SignUpPage() {
           if (isTurnstileEnabled) captcha.reset();
           formApi.setErrorMap({
             onSubmit: {
-              form: result.error.message || "Unable to create account.",
+              form: result.error.message || "ساخت حساب انجام نشد.",
               fields: {},
             },
           });
@@ -140,7 +140,7 @@ function SignUpPage() {
         if (isTurnstileEnabled) captcha.reset();
         formApi.setErrorMap({
           onSubmit: {
-            form: "Unable to create account right now. Please try again.",
+            form: "در حال حاضر ساخت حساب ممکن نیست. دوباره تلاش کنید.",
             fields: {},
           },
         });
@@ -150,7 +150,7 @@ function SignUpPage() {
 
   return (
     <AuthPageCard
-      title="Create your account"
+      title="ساخت حساب کاربری"
       footer={
         isHostedMode ? (
           showEmailForm ? (
@@ -162,40 +162,40 @@ function SignUpPage() {
                 google.clearError();
               }}
             >
-              Back to signup
+              بازگشت به روش‌های ثبت‌نام
             </button>
           ) : (
             <div className="space-y-4">
               <p className="text-sm leading-relaxed text-base-content/60">
-                By signing up, you agree to our{" "}
+                با ساخت حساب، با{" "}
                 <a
                   href="https://seomachine.ir/terms-and-conditions"
                   target="_blank"
                   rel="noreferrer"
                   className="text-base-content underline underline-offset-2 hover:text-base-content/80 transition-colors"
                 >
-                  Terms
+                  شرایط استفاده
                 </a>{" "}
-                and{" "}
+                و{" "}
                 <a
                   href="https://seomachine.ir/privacy"
                   target="_blank"
                   rel="noreferrer"
                   className="text-base-content underline underline-offset-2 hover:text-base-content/80 transition-colors"
                 >
-                  Privacy Policy
-                </a>
-                .
+                  سیاست حفظ حریم خصوصی
+                </a>{" "}
+                موافقت می‌کنید.
               </p>
 
               <p className="text-sm text-base-content/50">
-                Already have an account?{" "}
+                قبلاً حساب ساخته‌اید؟{" "}
                 <Link
                   to="/sign-in"
                   search={getSignInSearch(redirectTo)}
                   className="text-base-content underline underline-offset-2 hover:text-base-content/80 transition-colors"
                 >
-                  Sign in
+                  وارد شوید
                 </Link>
               </p>
             </div>
@@ -206,7 +206,7 @@ function SignUpPage() {
       {!showEmailForm ? (
         <>
           <AuthMethodChooser
-            googleLabel="Continue with Google"
+            googleLabel="ادامه با گوگل"
             disabled={!isHostedMode}
             isBusy={google.isStarting}
             onContinueWithGoogle={() => {
@@ -238,7 +238,7 @@ function SignUpPage() {
                   <input
                     type="text"
                     className="input input-bordered w-full"
-                    placeholder="Name (optional)..."
+                    placeholder="نام (اختیاری)..."
                     value={field.state.value}
                     onChange={(event) => field.handleChange(event.target.value)}
                     autoComplete="name"
@@ -261,7 +261,7 @@ function SignUpPage() {
                   <input
                     type="email"
                     className="input input-bordered w-full"
-                    placeholder="Email address..."
+                    placeholder="نشانی ایمیل..."
                     value={field.state.value}
                     onChange={(event) => field.handleChange(event.target.value)}
                     autoComplete="email"
@@ -285,7 +285,7 @@ function SignUpPage() {
                   <input
                     type="password"
                     className="input input-bordered w-full"
-                    placeholder="Password..."
+                    placeholder="گذرواژه..."
                     value={field.state.value}
                     onChange={(event) => field.handleChange(event.target.value)}
                     autoComplete="new-password"
@@ -311,7 +311,7 @@ function SignUpPage() {
                   <input
                     type="password"
                     className="input input-bordered w-full"
-                    placeholder="Confirm password..."
+                    placeholder="تکرار گذرواژه..."
                     value={field.state.value}
                     onChange={(event) => field.handleChange(event.target.value)}
                     autoComplete="new-password"
@@ -356,7 +356,7 @@ function SignUpPage() {
                       (isTurnstileEnabled && !captcha.hasToken)
                     }
                   >
-                    {isSubmitting ? "Creating account..." : "Create account"}
+                    {isSubmitting ? "در حال ساخت حساب..." : "ساخت حساب"}
                   </button>
                 </>
               );

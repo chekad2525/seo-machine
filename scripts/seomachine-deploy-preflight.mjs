@@ -19,6 +19,7 @@ const values = Object.fromEntries(
 const required = [
   "BETTER_AUTH_SECRET",
   "DATAFORSEO_API_KEY",
+  "SERPAPI_API_KEY",
   "GOOGLE_CLIENT_ID",
   "GOOGLE_CLIENT_SECRET",
   "LOOPS_API_KEY",

@@ -10,11 +10,10 @@ import { RankTrackingRepository } from "@/server/features/rank-tracking/reposito
 import { failRunIfActive } from "@/server/features/rank-tracking/services/rankCheckRunGuards";
 import {
   runLiveCheck,
-  runQueuedCheck,
   type QueuedCheckStats,
 } from "@/server/workflows/rankCheckPaths";
 import { pgStep } from "@/server/workflows/pgStep";
-import { createDataforseoClient } from "@/server/lib/dataforseo";
+import { createRankTrackingClient } from "@/server/lib/serpapi/client";
 import { captureServerEvent } from "@/server/lib/posthog";
 import { AppError } from "@/server/lib/errors";
 import { autumn } from "@/server/billing/autumn";
@@ -99,8 +98,8 @@ export async function prepareRankCheckKeywords(input: {
   }
 
   // Verify the user has enough credits for the full check before starting.
-  // Scheduled checks go through the cheaper task queue, so estimate at queued
-  // pricing — a live-price estimate would skip checks the user can afford.
+  // The estimate is a worst-case SerpApi page count. Actual usage can be lower
+  // because pagination stops as soon as the tracked domain is found.
   if (await isHostedServerAuthMode()) {
     const [monthlyCheck, topupCheck] = await Promise.all([
       autumn.check({
@@ -339,7 +338,7 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
       );
 
       const keywords = prepareResult.keywords;
-      const client = createDataforseoClient(billingCustomer);
+      const client = createRankTrackingClient(billingCustomer);
 
       console.log(`[rank-check] ${runId} loaded ${keywords.length} keywords`);
 
@@ -358,13 +357,9 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
           locationName,
           runId,
         };
-        // Scheduled checks use DataForSEO's task queue (~30% of live cost);
-        // manual checks stay on the live endpoint for instant results.
-        if (trigger === "scheduled") {
-          queueStats = await runQueuedCheck(step, checkContext);
-        } else {
-          await runLiveCheck(step, checkContext);
-        }
+        // SerpApi serves both manual and scheduled checks. Its pagination stops
+        // early when the target domain is found, reducing actual search usage.
+        await runLiveCheck(step, checkContext);
       } catch (error) {
         // Batch failure — snapshots for completed batches are already
         // persisted incrementally. Continue to finalization.

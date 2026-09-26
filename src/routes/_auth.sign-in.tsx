@@ -151,11 +151,18 @@ function SignInPage() {
         ) : null
       }
     >
-      {!showEmailForm ? (
+      {!isHostedMode ? (
+        <button
+          type="button"
+          className="btn btn-primary w-full"
+          onClick={() => window.location.assign(redirectTo)}
+        >
+          ورود به نسخه محلی
+        </button>
+      ) : !showEmailForm ? (
         <>
           <AuthMethodChooser
             googleLabel="ادامه با گوگل"
-            disabled={!isHostedMode}
             isBusy={isStartingGoogle}
             onContinueWithGoogle={() => {
               void handleContinueWithGoogle();

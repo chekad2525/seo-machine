@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   getConfigsForProject: vi.fn(),
   createConfig: vi.fn(),
   updateConfig: vi.fn(),
+  assertSerpApiLocationAccepted: vi.fn(),
 }));
 
 vi.mock("cloudflare:workers", () => ({ env: {} }));
@@ -16,6 +17,9 @@ vi.mock("@/server/lib/runtime-env", () => ({
   isHostedServerAuthMode: () => Promise.resolve(false),
 }));
 vi.mock("@/server/lib/dataforseo", () => ({ createDataforseoClient: vi.fn() }));
+vi.mock("@/server/lib/serpapi/locations", () => ({
+  assertSerpApiLocationAccepted: mocks.assertSerpApiLocationAccepted,
+}));
 vi.mock(
   "@/server/features/rank-tracking/repositories/RankTrackingRepository",
   () => ({ RankTrackingRepository: mocks }),
@@ -45,24 +49,9 @@ const baseInput = {
   scheduleInterval: "daily" as const,
 };
 
-/** The DataForSEO sandbox reply the location validator parses. */
-function stubSandbox(statusCode: number, statusMessage = "Ok.") {
-  vi.stubGlobal(
-    "fetch",
-    vi.fn().mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          tasks: [{ status_code: statusCode, status_message: statusMessage }],
-        }),
-        { status: 200 },
-      ),
-    ),
-  );
-}
-
 describe("RankTrackingService.createConfig", () => {
   beforeEach(() => {
-    stubSandbox(20000);
+    mocks.assertSerpApiLocationAccepted.mockResolvedValue(undefined);
   });
 
   it("reactivates an archived config instead of throwing, applying the new settings", async () => {
@@ -220,8 +209,15 @@ describe("RankTrackingService.createConfig", () => {
     );
   });
 
-  it("rejects a locationName the sandbox refuses, pointing at search_serp_locations", async () => {
-    stubSandbox(40501, "Invalid Field: 'location_name'.");
+  it("rejects a locationName SerpApi does not recognize", async () => {
+    mocks.assertSerpApiLocationAccepted.mockRejectedValue(
+      Object.assign(
+        new Error(
+          "SerpApi does not recognize this location. Select a location from search_serp_locations.",
+        ),
+        { code: "VALIDATION_ERROR" },
+      ),
+    );
     mocks.getConfigByProjectDomainLocation.mockResolvedValue(null);
     mocks.getConfigsForProject.mockResolvedValue([]);
 

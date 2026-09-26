@@ -1,8 +1,7 @@
 import { z } from "zod";
-import { fetchSerpLocationsForCountry } from "@/server/lib/dataforseo/serp-locations";
+import { searchSerpApiLocations } from "@/server/lib/serpapi/locations";
 import { mcpResponse } from "@/server/mcp/formatters";
 import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";
-import { rankSerpLocations } from "@/shared/serp-location-search";
 
 const inputSchema = {
   query: z
@@ -23,7 +22,7 @@ export const searchSerpLocationsTool = {
   config: {
     title: "Search SERP locations",
     description:
-      "Find the exact DataForSEO location name for local rank tracking. Returns up to 10 matches; pass the chosen `locationName` verbatim to create_rank_tracker. Uses no credits.",
+      "Find the exact SerpApi location name for local rank tracking. Returns up to 10 matches; pass the chosen `locationName` verbatim to create_rank_tracker. Uses no search credits.",
     inputSchema,
     outputSchema: {
       locations: z.array(
@@ -42,8 +41,7 @@ export const searchSerpLocationsTool = {
     },
   },
   handler: async (args: Args) => {
-    const all = await fetchSerpLocationsForCountry(args.countryCode);
-    const locations = rankSerpLocations(args.query, all, args.countryCode).map(
+    const locations = (await searchSerpApiLocations(args)).map(
       (location) => ({
         locationName: location.locationName,
         locationCode: location.locationCode,

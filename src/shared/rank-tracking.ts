@@ -9,21 +9,12 @@ import type { RankTrackingConfig } from "@/types/schemas/rank-tracking";
 // Cost constants
 // ---------------------------------------------------------------------------
 
-/** DataForSEO Live API: cost of first page (10 results) */
-const LIVE_BASE_PAGE_COST_USD = 0.002;
-
-/** DataForSEO Live API: cost of each additional page (75% of base) */
-const LIVE_EXTRA_PAGE_COST_USD = 0.0015;
-
-/** DataForSEO task queue (standard priority): cost of first page (10 results) */
-const QUEUED_BASE_PAGE_COST_USD = 0.0006;
-
-/** DataForSEO task queue (standard priority): cost of each additional page (75% of base) */
-const QUEUED_EXTRA_PAGE_COST_USD = 0.00045;
+/** SerpApi Starter plan: $25 / 1,000 fresh Google searches. */
+export const SERPAPI_SEARCH_COST_USD = 0.025;
 
 /**
- * How a rank check reaches DataForSEO: "live" is the instant endpoint used for
- * manual checks; "queued" is the cheaper task queue used for scheduled checks.
+ * Kept for API compatibility with existing callers. SerpApi handles manual and
+ * scheduled checks through the same endpoint and price model.
  */
 type RankCheckMethod = "live" | "queued";
 
@@ -56,12 +47,9 @@ export const rankCheckCostApprovalError = (
 // Cost estimation
 // ---------------------------------------------------------------------------
 
-/** DataForSEO cost for a single SERP request at the given depth. */
-function costPerSerpAtDepth(depth: number, method: RankCheckMethod): number {
-  const pages = depth / 10;
-  return method === "queued"
-    ? QUEUED_BASE_PAGE_COST_USD + (pages - 1) * QUEUED_EXTRA_PAGE_COST_USD
-    : LIVE_BASE_PAGE_COST_USD + (pages - 1) * LIVE_EXTRA_PAGE_COST_USD;
+/** Worst-case SerpApi cost for a keyword/device pair at the given depth. */
+function costPerSerpAtDepth(depth: number): number {
+  return depthToPages(depth) * SERPAPI_SEARCH_COST_USD;
 }
 
 export function depthToPages(depth: number): number {
@@ -76,28 +64,23 @@ export function estimateRankCheckCredits(
   keywordCount: number,
   devices: RankTrackingConfig["devices"],
   depth: number,
-  method: RankCheckMethod,
+  _method: RankCheckMethod,
 ) {
   const totalChecks = keywordCount * devicesCount(devices);
-  const checksPerMeteredCall = method === "queued" ? MAX_TASKS_PER_POST : 1;
   let costUsd = 0;
   let costCredits = 0;
 
-  // Metering rounds and ceilings each provider call independently. Live rank
-  // checks make one call per keyword/device pair, while queued checks post up
-  // to MAX_TASKS_PER_POST pairs per call. Summing one aggregate and rounding
-  // once can therefore understate the credits that will actually be charged.
-  for (let offset = 0; offset < totalChecks; offset += checksPerMeteredCall) {
-    const checksInCall = Math.min(checksPerMeteredCall, totalChecks - offset);
+  // Each keyword/device pair is metered independently. This intentionally uses
+  // the maximum pages for the configured depth; runtime stops when it finds the
+  // domain or reaches the end of the result set.
+  for (let offset = 0; offset < totalChecks; offset += 1) {
     const callCostUsd = roundUsdForBilling(
-      checksInCall * costPerSerpAtDepth(depth, method) * SEO_DATA_COST_MARKUP,
+      costPerSerpAtDepth(depth) * SEO_DATA_COST_MARKUP,
     );
     costUsd += callCostUsd;
     costCredits += Math.ceil(callCostUsd * AUTUMN_SEO_DATA_CREDITS_PER_USD);
   }
 
-  // This is the nominal queued task_post estimate. Rejected, failed, or
-  // timed-out tasks can later incur additional live-fallback spend.
   costUsd = roundUsdForBilling(costUsd);
   return { costUsd, costCredits };
 }

@@ -216,6 +216,13 @@ export const LOCATION_OPTIONS: readonly LocationOption[] = [
   { code: 2356, label: "India", shortLabel: "IN", languageCode: "en" },
   { code: 2360, label: "Indonesia", shortLabel: "ID", languageCode: "id" },
   {
+    code: 2364,
+    label: "Iran",
+    shortLabel: "IR",
+    languageCode: "fa",
+    googleAdsOnly: true,
+  },
+  {
     code: 2368,
     label: "Iraq",
     shortLabel: "IQ",

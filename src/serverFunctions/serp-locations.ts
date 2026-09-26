@@ -1,10 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAuthenticatedContext } from "@/serverFunctions/middleware";
-import { fetchSerpLocationsForCountry } from "@/server/lib/dataforseo/serp-locations";
-import { rankSerpLocations } from "@/shared/serp-location-search";
+import { searchSerpApiLocations } from "@/server/lib/serpapi/locations";
 
-/** ISO 3166-1 alpha-2, e.g. "us" — DataForSEO rejects country names. */
+/** ISO 3166-1 alpha-2, e.g. "us". */
 const countryCodeField = z.string().regex(/^[a-z]{2}$/i);
 
 const searchSerpLocationsSchema = z.object({
@@ -16,19 +15,14 @@ export const searchSerpLocations = createServerFn({ method: "POST" })
   .middleware(requireAuthenticatedContext)
   .validator(searchSerpLocationsSchema)
   .handler(async ({ data }) => {
-    const all = await fetchSerpLocationsForCountry(data.countryCode);
-    return rankSerpLocations(data.query, all, data.countryCode);
+    return searchSerpApiLocations(data);
   });
 
 /**
- * Warm the per-country location cache so the first real search is fast.
- * Fired when the user switches to Local targeting; the first search per
- * country otherwise pays the full ~9.5MB DataForSEO fetch (~3s).
+ * Kept for the existing UI call site. SerpApi searches locations directly, so
+ * there is no country catalog to warm.
  */
 export const prewarmSerpLocations = createServerFn({ method: "POST" })
   .middleware(requireAuthenticatedContext)
   .validator(z.object({ countryCode: countryCodeField }))
-  .handler(async ({ data }) => {
-    await fetchSerpLocationsForCountry(data.countryCode);
-    return { warmed: true };
-  });
+  .handler(async () => ({ warmed: true }));

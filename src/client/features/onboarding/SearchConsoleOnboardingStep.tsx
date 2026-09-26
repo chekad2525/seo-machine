@@ -41,11 +41,11 @@ export function SearchConsoleOnboardingStep() {
     <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">
-          Connect Google Search Console now?
+          اتصال به Google Search Console
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-base-content/60">
-          Bring your real clicks and queries into OpenSEO and your AI agent. You
-          can also do this later from the dashboard.
+          کلیک‌ها و عبارت‌های جستجوی واقعی را وارد OpenSEO و عامل هوش مصنوعی
+          کنید. این کار را بعداً نیز می‌توانید از داشبورد انجام دهید.
         </p>
       </div>
 
@@ -127,7 +127,7 @@ function GscConnect({ projectId }: { projectId: string }) {
           <Check className="size-3.5" />
         </span>
         <span className="text-base-content/80">
-          Connected to <span className="font-mono">{connection?.siteUrl}</span>.
+          متصل به <span className="font-mono">{connection?.siteUrl}</span>
         </span>
       </div>
     );
@@ -170,7 +170,7 @@ function GscConnect({ projectId }: { projectId: string }) {
         ) : (
           <GoogleGlyph className="size-[18px]" />
         )}
-        {linking ? "Opening Google…" : "Connect with Google"}
+        {linking ? "در حال باز کردن گوگل..." : "اتصال با گوگل"}
       </button>
     </div>
   );
@@ -180,7 +180,7 @@ function Checking() {
   return (
     <div className="flex items-center gap-2 text-sm text-base-content/50">
       <span className="loading loading-spinner loading-sm" />
-      Checking…
+      در حال بررسی...
     </div>
   );
 }

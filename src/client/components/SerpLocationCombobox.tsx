@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Loader2, Search } from "lucide-react";
 import { searchSerpLocations } from "@/serverFunctions/serp-locations";
 import { formatLocationLabel } from "@/shared/keyword-locations";
-import type { SerpLocationResult } from "@/server/lib/dataforseo/serp-locations";
+import type { SerpLocationResult } from "@/server/lib/serpapi/locations";
 
 type Props = {
   value: string | undefined;

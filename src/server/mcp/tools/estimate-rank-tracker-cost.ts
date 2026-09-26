@@ -30,7 +30,7 @@ export const estimateRankTrackerCostTool = {
   config: {
     title: "Estimate rank tracker cost",
     description:
-      "Estimate rank tracker cost without spending credits or starting a check. The live estimate covers one explicit run_rank_tracker check. For a scheduled tracker, the response also includes nominal queued per-check and approximate monthly recurring cost. Pass additionalKeywordCount before adding keywords to project the post-add cost. Scheduled estimates are not runtime caps; rejected, failed, or timed-out queued tasks may use additional separately billed live fallback.",
+      "Estimate the worst-case SerpApi rank tracker cost without spending credits or starting a check. The estimate covers one explicit run_rank_tracker check. For a scheduled tracker, the response also includes worst-case per-check and approximate monthly recurring cost. Pass additionalKeywordCount before adding keywords to project the post-add cost. Actual usage can be lower because pagination stops when the tracked domain is found.",
     inputSchema,
     outputSchema: z
       .object({
@@ -69,7 +69,7 @@ export const estimateRankTrackerCostTool = {
       args.additionalKeywordCount,
     );
     return mcpResponse({
-      text: `One live check for tracker ${args.trackerId} is estimated at $${estimate.costUsd.toFixed(4)} (${estimate.costCredits} credits): ${estimate.keywordCount} keyword${estimate.keywordCount === 1 ? "" : "s"} × ${estimate.devicesCount} device${estimate.devicesCount === 1 ? "" : "s"} = ${estimate.totalChecks} SERP checks.${estimate.additionalKeywordCount > 0 ? ` This projects ${estimate.additionalKeywordCount} additional keyword${estimate.additionalKeywordCount === 1 ? "" : "s"}.` : ""}${estimate.scheduledEstimate ? ` Its ${estimate.scheduledEstimate.scheduleInterval} queued checks have a nominal estimate of $${estimate.scheduledEstimate.costUsd.toFixed(4)} (${estimate.scheduledEstimate.costCredits} credits) each, or about $${estimate.scheduledEstimate.monthlyCostUsd.toFixed(4)} (${estimate.scheduledEstimate.monthlyCostCredits} credits) per month. Show the user that rejected, failed, or timed-out queued tasks may use additional separately billed live fallback, then use the per-check estimate as maxEstimatedScheduledCheckCredits when adding keywords.` : ""} No check was started.`,
+      text: `One SerpApi check for tracker ${args.trackerId} costs up to $${estimate.costUsd.toFixed(4)} (${estimate.costCredits} credits): ${estimate.keywordCount} keyword${estimate.keywordCount === 1 ? "" : "s"} × ${estimate.devicesCount} device${estimate.devicesCount === 1 ? "" : "s"} = ${estimate.totalChecks} SERP checks.${estimate.additionalKeywordCount > 0 ? ` This projects ${estimate.additionalKeywordCount} additional keyword${estimate.additionalKeywordCount === 1 ? "" : "s"}.` : ""}${estimate.scheduledEstimate ? ` Its ${estimate.scheduledEstimate.scheduleInterval} SerpApi checks cost up to $${estimate.scheduledEstimate.costUsd.toFixed(4)} (${estimate.scheduledEstimate.costCredits} credits) each, or about $${estimate.scheduledEstimate.monthlyCostUsd.toFixed(4)} (${estimate.scheduledEstimate.monthlyCostCredits} credits) per month. Actual usage can be lower because pagination stops when the domain is found; use the per-check estimate as maxEstimatedScheduledCheckCredits when adding keywords.` : ""} No check was started.`,
       meta: buildProjectMeta(
         context,
         args.projectId,

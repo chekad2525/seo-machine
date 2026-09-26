@@ -21,7 +21,7 @@ export function OnboardingAccountMenu({
           type="button"
           tabIndex={0}
           className="btn btn-ghost btn-circle"
-          aria-label="Open account menu"
+          aria-label="باز کردن منوی حساب"
         >
           <User className="h-5 w-5" />
         </button>
@@ -37,13 +37,13 @@ export function OnboardingAccountMenu({
           <li>
             <a href="/settings" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
-              Settings
+              تنظیمات
             </a>
           </li>
           <ThemePreferenceMenuItems />
           <li>
             <button type="button" onClick={handleSignOut}>
-              Sign out
+              خروج از حساب
             </button>
           </li>
         </ul>

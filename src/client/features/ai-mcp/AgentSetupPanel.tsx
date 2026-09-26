@@ -2,7 +2,7 @@ import { Package } from "lucide-react";
 import { CopyButton } from "./SetupControls";
 
 export const AGENT_SETUP_DESCRIPTION =
-  "Paste this prompt into your agent to automatically configure OpenSEO for you.";
+  "این پرامپت را در عامل خود قرار دهید تا OpenSEO به‌صورت خودکار تنظیم شود.";
 
 export function AgentSetupPanel({
   prompt,
@@ -19,9 +19,9 @@ export function AgentSetupPanel({
             <Package className="size-5 text-base-content/70" />
           </span>
           <div>
-            <p className="text-sm font-medium">OpenSEO plugin</p>
+            <p className="text-sm font-medium">افزونه OpenSEO</p>
             <p className="mt-1 text-xs text-base-content/55">
-              MCP connection + SEO skills
+              اتصال MCP و مهارت‌های سئو
             </p>
           </div>
         </div>
@@ -29,8 +29,8 @@ export function AgentSetupPanel({
           <CopyButton
             primary
             value={prompt}
-            label="Copy setup prompt"
-            successMessage="Setup prompt copied"
+            label="کپی پرامپت راه‌اندازی"
+            successMessage="پرامپت راه‌اندازی کپی شد"
             onCopy={onCopy}
           />
         </div>
@@ -42,7 +42,7 @@ export function AgentSetupPanel({
           rel="noreferrer"
           className="text-xs text-base-content/60 underline decoration-base-content/25 underline-offset-4 hover:text-base-content"
         >
-          Manual setup
+          راه‌اندازی دستی
         </a>
       </div>
     </>

@@ -21,16 +21,16 @@ const resetPasswordSchema = z
       .string()
       .min(
         HOSTED_PASSWORD_MIN_LENGTH,
-        `Password must be at least ${HOSTED_PASSWORD_MIN_LENGTH} characters.`,
+        `گذرواژه باید دست‌کم ${HOSTED_PASSWORD_MIN_LENGTH} نویسه باشد.`,
       )
       .max(
         HOSTED_PASSWORD_MAX_LENGTH,
-        `Password must be at most ${HOSTED_PASSWORD_MAX_LENGTH} characters.`,
+        `گذرواژه باید حداکثر ${HOSTED_PASSWORD_MAX_LENGTH} نویسه باشد.`,
       ),
     confirmPassword: z.string(),
   })
   .refine((value) => value.password === value.confirmPassword, {
-    message: "Passwords do not match.",
+    message: "گذرواژه‌ها یکسان نیستند.",
     path: ["confirmPassword"],
   });
 
@@ -47,12 +47,12 @@ export const Route = createFileRoute("/reset-password")({
 function getResetPasswordErrorMessage(error: string | undefined) {
   switch ((error ?? "").toLowerCase()) {
     case "invalid_token":
-      return "This reset link is no longer valid. Request a new one to keep going.";
+      return "این پیوند بازیابی دیگر معتبر نیست. یک پیوند تازه درخواست کنید.";
     case "token_expired":
-      return "This reset link has expired. Request a new one to keep going.";
+      return "این پیوند بازیابی منقضی شده است. یک پیوند تازه درخواست کنید.";
     default:
       return error
-        ? "This reset link can't be used anymore. Request a new one and try again."
+        ? "این پیوند بازیابی قابل استفاده نیست. یک پیوند تازه درخواست کنید."
         : null;
   }
 }
@@ -70,31 +70,30 @@ function getResetPasswordPageCopy({
 }) {
   if (!isHostedMode) {
     return {
-      title: "Reset password",
-      helperText: "Password reset isn't available right now.",
+      title: "بازیابی گذرواژه",
+      helperText: "بازیابی گذرواژه اکنون در دسترس نیست.",
     };
   }
 
   if (isComplete) {
     return {
-      title: "Password updated",
-      helperText:
-        "Your password has been updated. Sign in with your new password.",
+      title: "گذرواژه تغییر کرد",
+      helperText: "گذرواژه شما تغییر کرد. اکنون با گذرواژه جدید وارد شوید.",
     };
   }
 
   if (routeError || !hasToken) {
     return {
-      title: "Reset link expired",
+      title: "پیوند بازیابی منقضی شده است",
       helperText:
         routeError ||
-        "This reset link is no longer valid. Request a new one to keep going.",
+        "این پیوند بازیابی دیگر معتبر نیست. یک پیوند تازه درخواست کنید.",
     };
   }
 
   return {
-    title: "Reset password",
-    helperText: "Choose a new password for your account.",
+    title: "بازیابی گذرواژه",
+    helperText: "یک گذرواژه جدید برای حساب خود انتخاب کنید.",
   };
 }
 
@@ -116,7 +115,7 @@ function ResetPasswordPage() {
       if (!token) {
         formApi.setErrorMap({
           onSubmit: {
-            form: "This reset link is no longer valid. Request a new one and try again.",
+            form: "این پیوند بازیابی دیگر معتبر نیست. یک پیوند تازه درخواست کنید.",
             fields: {},
           },
         });
@@ -132,7 +131,7 @@ function ResetPasswordPage() {
         if (result.error) {
           formApi.setErrorMap({
             onSubmit: {
-              form: "This reset link is no longer valid. Request a new one and try again.",
+              form: "این پیوند بازیابی دیگر معتبر نیست. یک پیوند تازه درخواست کنید.",
               fields: {},
             },
           });
@@ -141,7 +140,7 @@ function ResetPasswordPage() {
       } catch {
         formApi.setErrorMap({
           onSubmit: {
-            form: "We couldn't update your password right now. Please try again.",
+            form: "در حال حاضر تغییر گذرواژه ممکن نیست. دوباره تلاش کنید.",
             fields: {},
           },
         });
@@ -178,7 +177,7 @@ function ResetPasswordPage() {
                     search={getSignInSearch(redirectTo)}
                     className="text-base-content/50 hover:text-base-content transition-colors"
                   >
-                    Sign in
+                    ورود
                   </Link>
                 </p>
               }
@@ -192,7 +191,7 @@ function ResetPasswordPage() {
                   }
                   className="btn btn-soft w-full"
                 >
-                  Continue to sign in
+                  ادامه و ورود
                 </a>
               ) : routeError || !token ? (
                 <Link
@@ -200,7 +199,7 @@ function ResetPasswordPage() {
                   search={getSignInSearch(redirectTo)}
                   className="btn btn-soft w-full"
                 >
-                  Request a new reset link
+                  درخواست پیوند بازیابی جدید
                 </Link>
               ) : (
                 <form
@@ -219,7 +218,7 @@ function ResetPasswordPage() {
                           <input
                             type="password"
                             className="input input-bordered w-full"
-                            placeholder="New password..."
+                            placeholder="گذرواژه جدید..."
                             value={field.state.value}
                             onChange={(event) =>
                               field.handleChange(event.target.value)
@@ -246,7 +245,7 @@ function ResetPasswordPage() {
                           <input
                             type="password"
                             className="input input-bordered w-full"
-                            placeholder="Confirm new password..."
+                            placeholder="تکرار گذرواژه جدید..."
                             value={field.state.value}
                             onChange={(event) =>
                               field.handleChange(event.target.value)
@@ -271,7 +270,7 @@ function ResetPasswordPage() {
                     className="btn btn-soft w-full"
                     disabled={isSubmitting}
                   >
-                    {isSubmitting ? "Updating password..." : "Update password"}
+                    {isSubmitting ? "در حال تغییر گذرواژه..." : "تغییر گذرواژه"}
                   </button>
                 </form>
               )}

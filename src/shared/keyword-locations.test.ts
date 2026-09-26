@@ -26,6 +26,10 @@ describe("keyword locations", () => {
     expect(isSupportedLocationCode(2352)).toBe(true);
     expect(isLabsLocationCode(2352)).toBe(false);
     expect(getLanguageCode(2352)).toBe("is");
+
+    expect(getKeywordDataProvider(2364)).toBe("google_ads"); // Iran
+    expect(isSupportedLocationCode(2364)).toBe(true);
+    expect(getLanguageCode(2364)).toBe("fa");
   });
 
   it("falls back to labs for unknown codes (Labs rejects them upstream)", () => {
@@ -74,6 +78,7 @@ describe("getIsoCountryCode", () => {
   it("lowercases the shortLabel for standard countries", () => {
     expect(getIsoCountryCode(2840)).toBe("us");
     expect(getIsoCountryCode(2036)).toBe("au");
+    expect(getIsoCountryCode(2364)).toBe("ir");
   });
 
   it("maps the UK display label to its ISO code gb", () => {
