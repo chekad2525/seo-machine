@@ -20,7 +20,7 @@ export function AgentSetup({
   const [intent, setIntent] = useState(initialIntent ?? "");
   const prompt = getAgentSetupPrompt(
     typeof window === "undefined"
-      ? "https://app.seomachine.ir"
+      ? "https://seo-machine-api-lyart.vercel.app"
       : window.location.origin,
   );
   const Heading = onComplete ? "h1" : "h2";

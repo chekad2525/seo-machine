@@ -7,7 +7,7 @@ import {
 export function AgentPrompt({ kind }: { kind: "setup" | "update" }) {
   const prompt =
     kind === "setup"
-      ? getAgentSetupPrompt("https://app.seomachine.ir")
+      ? getAgentSetupPrompt("https://seo-machine-api-lyart.vercel.app")
       : agentUpdatePrompt;
 
   return (

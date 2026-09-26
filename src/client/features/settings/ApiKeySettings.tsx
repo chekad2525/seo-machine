@@ -19,7 +19,7 @@ export function ApiKeySettings() {
 
   const mcpUrl =
     typeof window === "undefined"
-      ? "https://app.seomachine.ir/mcp"
+      ? "https://seo-machine-api-lyart.vercel.app/mcp"
       : `${window.location.origin}/mcp`;
 
   const apiKeysQuery = useQuery({

@@ -181,7 +181,7 @@ export function SignupPreview({
             </div>
             <CopyButton
               primary
-              value={getAgentSetupPrompt("https://app.seomachine.ir")}
+              value={getAgentSetupPrompt("https://seo-machine-api-lyart.vercel.app")}
               label="Copy setup prompt"
               successMessage="Setup prompt copied"
             />

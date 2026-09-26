@@ -83,7 +83,7 @@ export function DashboardSetupAction({
               primary
               value={getAgentSetupPrompt(
                 typeof window === "undefined"
-                  ? "https://app.seomachine.ir"
+                  ? "https://seo-machine-api-lyart.vercel.app"
                   : window.location.origin,
               )}
               label="Copy setup prompt"

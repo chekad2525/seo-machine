@@ -1,3 +1,4 @@
+import { appUrl } from "@/lib/app-url";
 import { createFileRoute } from "@tanstack/react-router";
 import { BacklinkCheckerTool } from "@/components/backlink-checker-tool";
 import { buildPageSeo } from "@/lib/seo";
@@ -127,7 +128,7 @@ function BacklinkCheckerPage() {
         </p>
         <div className="mt-4 flex flex-wrap items-center gap-4">
           <a
-            href="https://app.seomachine.ir/sign-up"
+            href={appUrl("/sign-up")}
             className="inline-flex h-10 items-center justify-center rounded-lg bg-neutral-950 px-4 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
           >
             Try OpenSEO

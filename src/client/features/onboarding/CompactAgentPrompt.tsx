@@ -14,7 +14,7 @@ export function CompactAgentPrompt({
   onBack: () => void;
   onFinish: () => void;
 }) {
-  const prompt = getAgentSetupPrompt("https://app.seomachine.ir");
+  const prompt = getAgentSetupPrompt("https://seo-machine-api-lyart.vercel.app");
   const copy = (
     <div className="[&>button]:h-11 [&>button]:w-full [&>button]:gap-2 [&>button]:text-sm">
       <CopyButton

@@ -54,7 +54,7 @@ export const Route = createFileRoute("/_app/ai")({
 function AiPage() {
   const origin =
     typeof window === "undefined"
-      ? "https://app.seomachine.ir"
+      ? "https://seo-machine-api-lyart.vercel.app"
       : window.location.origin;
   const mcpUrl = `${origin}/mcp`;
   const prompt = getAgentSetupPrompt(origin);
