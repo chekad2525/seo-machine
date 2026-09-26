@@ -28,7 +28,10 @@ export default defineConfig(({ mode }) => {
     // Vercel always serves the hosted sign-in UI; the server still validates
     // its own AUTH_MODE and secret configuration at request time.
     define: isVercel
-      ? { "import.meta.env.AUTH_MODE": JSON.stringify("hosted") }
+      ? {
+          "import.meta.env.AUTH_MODE": JSON.stringify("hosted"),
+          "import.meta.env.VITE_GOOGLE_ONLY": "true",
+        }
       : undefined,
     resolve: isVercel
       ? {

@@ -46,6 +46,7 @@ function createAuth() {
   const baseUrl = isHostedAuthMode(env.AUTH_MODE)
     ? getHostedBaseUrl()
     : "http://localhost";
+  const googleOnly = process.env.VERCEL === "1";
   const bypassEmail = Reflect.get(env, "BYPASS_EMAIL_VERIFICATION") === "true";
   const baseAuthConfig = createBaseAuthConfig(
     isHostedAuthMode(env.AUTH_MODE)
@@ -161,7 +162,8 @@ function createAuth() {
     ...baseAuthConfig,
     emailAndPassword: {
       ...baseAuthConfig.emailAndPassword,
-      requireEmailVerification: !bypassEmail,
+      enabled: !googleOnly,
+      requireEmailVerification: !googleOnly && !bypassEmail,
       resetPasswordTokenExpiresIn: 60 * 60,
       revokeSessionsOnPasswordReset: true,
       sendResetPassword: async ({ user, url }) => {
@@ -171,18 +173,19 @@ function createAuth() {
         });
       },
     },
-    emailVerification: bypassEmail
-      ? undefined
-      : {
-          sendOnSignUp: true,
-          autoSignInAfterVerification: true,
-          sendVerificationEmail: async ({ user, url }) => {
-            await sendHostedVerificationEmail({
-              email: user.email,
-              confirmationUrl: url,
-            });
+    emailVerification:
+      googleOnly || bypassEmail
+        ? undefined
+        : {
+            sendOnSignUp: true,
+            autoSignInAfterVerification: true,
+            sendVerificationEmail: async ({ user, url }) => {
+              await sendHostedVerificationEmail({
+                email: user.email,
+                confirmationUrl: url,
+              });
+            },
           },
-        },
     socialProviders: getSocialProviders(),
     // Where OAuth redirect-flow failures land when Better Auth can't honor a
     // per-flow errorCallbackURL (Google-side errors like a canceled consent
@@ -384,7 +387,8 @@ export function hasHostedAuthConfig() {
     getGoogleSocialProviderConfig();
     return (
       hasHostedTurnstileConfig(env) &&
-      (Reflect.get(env, "BYPASS_EMAIL_VERIFICATION") === "true" ||
+      (process.env.VERCEL === "1" ||
+        Reflect.get(env, "BYPASS_EMAIL_VERIFICATION") === "true" ||
         hasHostedAuthEmailConfig())
     );
   } catch {

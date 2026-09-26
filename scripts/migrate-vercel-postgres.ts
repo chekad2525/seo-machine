@@ -29,7 +29,19 @@ try {
 
   // Existing repository SQL explicitly qualifies some foreign keys as public.
   // Rewrite those references in memory; the tracked migration files stay intact.
-  await db.dialect.migrate(isolatedMigrations, db.session, {
+  // Drizzle's migrator uses these internals, which are omitted from its
+  // public database type. The transformed SQL preserves migration hashes.
+  const migrationDb = db as unknown as {
+    dialect: {
+      migrate: (
+        migrations: typeof isolatedMigrations,
+        session: unknown,
+        config: { migrationsFolder: string; migrationsSchema: string },
+      ) => Promise<void>;
+    };
+    session: unknown;
+  };
+  await migrationDb.dialect.migrate(isolatedMigrations, migrationDb.session, {
     migrationsFolder: "./drizzle-pg",
     migrationsSchema: VERCEL_DATABASE_SCHEMA,
   });

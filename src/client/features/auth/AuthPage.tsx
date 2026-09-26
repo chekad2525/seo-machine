@@ -51,14 +51,16 @@ export function AuthMethodChooser({
         {isBusy ? "در حال باز کردن گوگل..." : googleLabel}
       </button>
 
-      <button
-        type="button"
-        className="btn w-full"
-        onClick={onContinueWithEmail}
-        disabled={disabled || isBusy}
-      >
-        {emailLabel}
-      </button>
+      {!import.meta.env.VITE_GOOGLE_ONLY ? (
+        <button
+          type="button"
+          className="btn w-full"
+          onClick={onContinueWithEmail}
+          disabled={disabled || isBusy}
+        >
+          {emailLabel}
+        </button>
+      ) : null}
     </div>
   );
 }

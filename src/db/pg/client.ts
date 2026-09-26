@@ -22,6 +22,21 @@ function createPgDb(sql: Sql) {
   return drizzle(sql, { schema });
 }
 
+// Vercel can resume a Function after its initial request frame. TanStack Start
+// also dispatches server functions through an async boundary. A process-scoped
+// pool keeps Better Auth's Drizzle adapter usable across both paths; the
+// Supabase transaction pooler requires unnamed (non-prepared) queries.
+const vercelSql =
+  process.env.VERCEL === "1"
+    ? postgres(getPostgresConnectionString(), {
+        max: 1,
+        prepare: false,
+        fetch_types: false,
+        connect_timeout: 10,
+      })
+    : null;
+const vercelDb = vercelSql ? createPgDb(vercelSql) : null;
+
 const pgClientStore = new AsyncLocalStorage<{
   sql: Sql;
   db: ReturnType<typeof createPgDb>;
@@ -31,6 +46,7 @@ export const pgDb = new Proxy(
   {},
   {
     get(_target, prop, receiver) {
+      if (vercelDb) return Reflect.get(vercelDb, prop, receiver);
       const store = pgClientStore.getStore();
       if (!store) {
         throw new Error(
@@ -61,6 +77,7 @@ export const pgDb = new Proxy(
  * response can keep querying after the handler returns.
  */
 export async function withPgClient<T>(fn: () => Promise<T>): Promise<T> {
+  if (vercelDb) return fn();
   if (getDatabaseProvider() !== "postgres") {
     return fn();
   }

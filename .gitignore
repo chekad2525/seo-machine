@@ -48,3 +48,5 @@ dist-sourcemaps/
 .alchemy/
 .open-seo-upstream/
 .freebuff/
+.env.local
+.env.vercel.local
