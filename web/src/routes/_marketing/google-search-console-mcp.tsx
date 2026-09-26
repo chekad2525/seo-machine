@@ -1,3 +1,4 @@
+import { appUrl } from "@/lib/app-url";
 import { createFileRoute } from "@tanstack/react-router";
 import defaultMdxComponents from "fumadocs-ui/mdx";
 import { DocsBody } from "fumadocs-ui/page";
@@ -65,7 +66,7 @@ function GoogleSearchConsoleMcpPage() {
         ) : null}
         <div className="mt-6 flex flex-col gap-3 sm:flex-row">
           <a
-            href="https://app.seomachine.ir/sign-up"
+            href={appUrl("/sign-up")}
             className="inline-flex h-10 items-center justify-center rounded-lg bg-neutral-950 px-5 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
           >
             Get started
@@ -111,7 +112,7 @@ function GoogleSearchConsoleMcpCta() {
       </p>
       <div className="mt-5 flex flex-col gap-3 sm:flex-row">
         <a
-          href="https://app.seomachine.ir/sign-up"
+          href={appUrl("/sign-up")}
           className="inline-flex h-10 items-center justify-center rounded-lg bg-neutral-950 px-4 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
         >
           Get started

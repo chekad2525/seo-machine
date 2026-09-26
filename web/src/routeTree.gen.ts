@@ -10,7 +10,10 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TermsAndConditionsRouteImport } from './routes/terms-and-conditions'
+import { Route as SignUpRouteImport } from './routes/sign-up'
+import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as MarketingRouteImport } from './routes/_marketing'
 import { Route as GuidesIndexRouteImport } from './routes/guides/index'
 import { Route as DocsIndexRouteImport } from './routes/docs/index'
@@ -79,9 +82,24 @@ const TermsAndConditionsRoute = TermsAndConditionsRouteImport.update({
   path: '/terms-and-conditions',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SignUpRoute = SignUpRouteImport.update({
+  id: '/sign-up',
+  path: '/sign-up',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignInRoute = SignInRouteImport.update({
+  id: '/sign-in',
+  path: '/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MarketingRoute = MarketingRouteImport.update({
@@ -443,7 +461,10 @@ const MarketingLibraryAiAgentSeoHumanInTheLoopContentRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof MarketingIndexRoute
+  '/dashboard': typeof DashboardRoute
   '/privacy': typeof PrivacyRoute
+  '/sign-in': typeof SignInRoute
+  '/sign-up': typeof SignUpRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/backlink-checker': typeof MarketingBacklinkCheckerRoute
   '/google-search-console-mcp': typeof MarketingGoogleSearchConsoleMcpRoute
@@ -507,7 +528,10 @@ export interface FileRoutesByFullPath {
   '/library/site-audit/': typeof MarketingLibrarySiteAuditIndexRoute
 }
 export interface FileRoutesByTo {
+  '/dashboard': typeof DashboardRoute
   '/privacy': typeof PrivacyRoute
+  '/sign-in': typeof SignInRoute
+  '/sign-up': typeof SignUpRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/backlink-checker': typeof MarketingBacklinkCheckerRoute
   '/google-search-console-mcp': typeof MarketingGoogleSearchConsoleMcpRoute
@@ -574,7 +598,10 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_marketing': typeof MarketingRouteWithChildren
+  '/dashboard': typeof DashboardRoute
   '/privacy': typeof PrivacyRoute
+  '/sign-in': typeof SignInRoute
+  '/sign-up': typeof SignUpRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/_marketing/backlink-checker': typeof MarketingBacklinkCheckerRoute
   '/_marketing/google-search-console-mcp': typeof MarketingGoogleSearchConsoleMcpRoute
@@ -642,7 +669,10 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/dashboard'
     | '/privacy'
+    | '/sign-in'
+    | '/sign-up'
     | '/terms-and-conditions'
     | '/backlink-checker'
     | '/google-search-console-mcp'
@@ -706,7 +736,10 @@ export interface FileRouteTypes {
     | '/library/site-audit/'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/dashboard'
     | '/privacy'
+    | '/sign-in'
+    | '/sign-up'
     | '/terms-and-conditions'
     | '/backlink-checker'
     | '/google-search-console-mcp'
@@ -772,7 +805,10 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/_marketing'
+    | '/dashboard'
     | '/privacy'
+    | '/sign-in'
+    | '/sign-up'
     | '/terms-and-conditions'
     | '/_marketing/backlink-checker'
     | '/_marketing/google-search-console-mcp'
@@ -839,7 +875,10 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   MarketingRoute: typeof MarketingRouteWithChildren
+  DashboardRoute: typeof DashboardRoute
   PrivacyRoute: typeof PrivacyRoute
+  SignInRoute: typeof SignInRoute
+  SignUpRoute: typeof SignUpRoute
   TermsAndConditionsRoute: typeof TermsAndConditionsRoute
   ApiBacklinkCheckRoute: typeof ApiBacklinkCheckRoute
   ApiEventRoute: typeof ApiEventRoute
@@ -862,11 +901,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TermsAndConditionsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/sign-up': {
+      id: '/sign-up'
+      path: '/sign-up'
+      fullPath: '/sign-up'
+      preLoaderRoute: typeof SignUpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sign-in': {
+      id: '/sign-in'
+      path: '/sign-in'
+      fullPath: '/sign-in'
+      preLoaderRoute: typeof SignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/privacy': {
       id: '/privacy'
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_marketing': {
@@ -1451,7 +1511,10 @@ const MarketingRouteWithChildren = MarketingRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   MarketingRoute: MarketingRouteWithChildren,
+  DashboardRoute: DashboardRoute,
   PrivacyRoute: PrivacyRoute,
+  SignInRoute: SignInRoute,
+  SignUpRoute: SignUpRoute,
   TermsAndConditionsRoute: TermsAndConditionsRoute,
   ApiBacklinkCheckRoute: ApiBacklinkCheckRoute,
   ApiEventRoute: ApiEventRoute,
