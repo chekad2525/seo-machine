@@ -283,9 +283,15 @@ async function getLatestRun(configId: string, projectId: string) {
   // this read path caused a race where the original workflow kept running
   // while a replacement was started.
   if (process.env.VERCEL === "1") {
-    return formatRun(run, run.status === "pending" || run.status === "running"
-      ? { maybeStale: Date.now() - new Date(run.startedAt).getTime() > 10 * 60 * 1000, staleReason: "Vercel rank check may have timed out" }
-      : undefined);
+    const isActive = run.status === "pending" || run.status === "running";
+    const isStale =
+      isActive && Date.now() - new Date(run.startedAt).getTime() > 10 * 60 * 1000;
+    return formatRun(
+      run,
+      isStale
+        ? { maybeStale: true, staleReason: "Vercel rank check may have timed out" }
+        : undefined,
+    );
   }
 
   const reconciliation = await reconcileActiveRankCheckRun(run);
@@ -308,6 +314,12 @@ async function refreshKeywordMetrics(
   projectId: string,
   billingCustomer: BillingCustomerContext,
 ): Promise<{ updated: number }> {
+  if (process.env.VERCEL === "1") {
+    throw new AppError(
+      "AUTH_CONFIG_MISSING",
+      "Keyword volume, difficulty and CPC are unavailable from SerpApi.",
+    );
+  }
   const config = await getValidatedConfig(configId, projectId);
   await requireRankCheckAccess(billingCustomer.organizationId);
   const keywords = await RankTrackingRepository.getKeywordsForConfig(configId);

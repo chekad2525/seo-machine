@@ -31,6 +31,7 @@ export default defineConfig(({ mode }) => {
       ? {
           "import.meta.env.AUTH_MODE": JSON.stringify("hosted"),
           "import.meta.env.VITE_GOOGLE_ONLY": "true",
+          "import.meta.env.VITE_RANK_METRICS_AVAILABLE": "false",
         }
       : undefined,
     resolve: isVercel

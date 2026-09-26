@@ -309,6 +309,24 @@ describe("RankTrackingService management invariants", () => {
     );
   });
 
+  it("does not call DataForSEO for Vercel keyword stats", async () => {
+    const previous = process.env.VERCEL;
+    process.env.VERCEL = "1";
+    try {
+      await expect(
+        RankTrackingService.refreshKeywordMetrics(
+          "config_1",
+          "project_1",
+          billingCustomer,
+        ),
+      ).rejects.toMatchObject({ code: "AUTH_CONFIG_MISSING" });
+      expect(mocks.createDataforseoClient).not.toHaveBeenCalled();
+    } finally {
+      if (previous === undefined) delete process.env.VERCEL;
+      else process.env.VERCEL = previous;
+    }
+  });
+
   it("rejects hosted unpaid metrics refresh before provider work", async () => {
     mocks.isHostedServerAuthMode.mockResolvedValue(true);
     mocks.customerHasPaidPlan.mockResolvedValue(false);

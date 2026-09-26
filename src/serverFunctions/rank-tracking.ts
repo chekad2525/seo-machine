@@ -218,7 +218,7 @@ export const addTrackingKeywords = createServerFn({ method: "POST" })
     }
 
     // Fetch keyword metrics (awaited so they're in the DB before client re-fetches)
-    if (result.added > 0) {
+    if (result.added > 0 && process.env.VERCEL !== "1") {
       try {
         await RankTrackingService.refreshKeywordMetrics(
           data.configId,

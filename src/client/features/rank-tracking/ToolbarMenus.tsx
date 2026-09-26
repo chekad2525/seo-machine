@@ -114,17 +114,19 @@ export function MoreMenu({
           disabled={checkBusy}
         />
       )}
-      <MenuItem
-        icon={
-          <RefreshCw
-            className={`size-3.5 ${metricsRefreshing ? "animate-spin" : ""}`}
-          />
-        }
-        label={metricsRefreshing ? "Refreshing..." : "Update keyword stats"}
-        description="Volume, difficulty & CPC — not rankings"
-        onClick={onRefreshMetrics}
-        disabled={metricsRefreshing || !hasData}
-      />
+      {import.meta.env.VITE_RANK_METRICS_AVAILABLE !== false ? (
+        <MenuItem
+          icon={
+            <RefreshCw
+              className={`size-3.5 ${metricsRefreshing ? "animate-spin" : ""}`}
+            />
+          }
+          label={metricsRefreshing ? "Refreshing..." : "Update keyword stats"}
+          description="Volume, difficulty & CPC — not rankings"
+          onClick={onRefreshMetrics}
+          disabled={metricsRefreshing || !hasData}
+        />
+      ) : null}
     </ToolbarMenu>
   );
 }
